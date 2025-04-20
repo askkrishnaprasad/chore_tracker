@@ -1,0 +1,295 @@
+{% extends "base.html" %}
+
+{% block title %}Assign Chore | Household Chore Tracker{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <h1 class="fw-bold mb-0">Assign Chore</h1>
+        <p class="text-muted">Assign a chore to another household member</p>
+    </div>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-primary-gradient text-white">
+                <h5 class="mb-0"><i class="fas fa-user-plus me-2"></i>Chore Assignment</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('assign_chore') }}">
+                    {{ form.hidden_tag() }}
+                    
+                    <div class="mb-3">
+                        <label for="chore_id" class="form-label">Choose Chore</label>
+                        {{ form.chore_id(class="form-select" + (" is-invalid" if form.chore_id.errors else ""), id="chore_id") }}
+                        {% if form.chore_id.errors %}
+                            <div class="invalid-feedback">
+                                {% for error in form.chore_id.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="assignee_id" class="form-label">Assign To</label>
+                        <div class="input-group">
+                            {{ form.assignee_id(class="form-select" + (" is-invalid" if form.assignee_id.errors else ""), id="assignee_id") }}
+                            <span class="input-group-text calendar-status" id="calendar-status" data-bs-toggle="tooltip" title="">
+                                <i class="fas fa-calendar-alt"></i>
+                            </span>
+                        </div>
+                        {% if form.assignee_id.errors %}
+                            <div class="invalid-feedback">
+                                {% for error in form.assignee_id.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                        <div class="form-text" id="calendar-status-text">
+                            Select a user to see if they have Google Calendar connected.
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="due_date" class="form-label">Due Date</label>
+                        {{ form.due_date(class="form-control" + (" is-invalid" if form.due_date.errors else ""), id="due_date", type="date") }}
+                        {% if form.due_date.errors %}
+                            <div class="invalid-feedback">
+                                {% for error in form.due_date.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="points" class="form-label">Points</label>
+                        {{ form.points(class="form-control" + (" is-invalid" if form.points.errors else ""), id="points", placeholder="1.0") }}
+                        {% if form.points.errors %}
+                            <div class="invalid-feedback">
+                                {% for error in form.points.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                        <div class="form-text">Point value for completing this chore (default: 1.0)</div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label for="notes" class="form-label">Notes (Optional)</label>
+                        {{ form.notes(class="form-control" + (" is-invalid" if form.notes.errors else ""), id="notes", rows="3", placeholder="Add any notes or instructions...") }}
+                        {% if form.notes.errors %}
+                            <div class="invalid-feedback">
+                                {% for error in form.notes.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-4 form-check">
+                        {{ form.add_to_calendar(class="form-check-input", id="add_to_calendar") }}
+                        <label class="form-check-label" for="add_to_calendar">
+                            Add to Google Calendar
+                        </label>
+                        <div class="form-text">
+                            If checked, this chore will be added to the assignee's Google Calendar (if connected).
+                        </div>
+                    </div>
+                    
+                    <div class="d-grid gap-2">
+                        {{ form.submit(class="btn btn-primary") }}
+                        <a href="{{ url_for('dashboard') }}" class="btn btn-outline-secondary">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <div class="card mt-4">
+            <div class="card-header bg-info-gradient text-white">
+                <h5 class="mb-0"><i class="fas fa-clipboard-check me-2"></i>Today's Status</h5>
+            </div>
+            <div class="card-body">
+                <h6 class="mb-3">Already completed today:</h6>
+                {% if today_completions %}
+                <ul class="list-group mb-4">
+                    {% for completion in today_completions %}
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <span>
+                            <i class="fas fa-check-circle text-success me-2"></i>
+                            <strong>{{ chores|selectattr('id', 'eq', completion.chore_id)|map(attribute='name')|first }}</strong>
+                        </span>
+                        <span class="badge bg-primary">{{ users|selectattr('id', 'eq', completion.user_id)|map(attribute='username')|first }}</span>
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <p class="text-muted"><i>No chores completed today yet.</i></p>
+                {% endif %}
+                
+                <h6 class="mb-3">Assigned for today:</h6>
+                {% set today_assignments = existing_assignments|selectattr('due_date', 'eq', today)|list %}
+                {% if today_assignments %}
+                <ul class="list-group">
+                    {% for assignment in today_assignments %}
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <span>
+                            <i class="fas fa-hourglass-half text-warning me-2"></i>
+                            <strong>{{ chores|selectattr('id', 'eq', assignment.chore_id)|map(attribute='name')|first }}</strong>
+                        </span>
+                        <span class="badge bg-secondary">{{ users|selectattr('id', 'eq', assignment.assignee_id)|map(attribute='username')|first }}</span>
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <p class="text-muted"><i>No pending assignments for today.</i></p>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i>About Assignments</h5>
+            </div>
+            <div class="card-body">
+                <p>When you assign a chore to another household member:</p>
+                <ul>
+                    <li>The assignment will appear on their dashboard</li>
+                    <li>They must complete the chore by the due date</li>
+                    <li>If they miss the deadline, you can apply a penalty</li>
+                    <li>They will earn the assigned points upon completion</li>
+                </ul>
+                <p class="mb-1"><strong>Google Calendar Integration:</strong></p>
+                <ul>
+                    <li>Chores can be automatically added to the assignee's Google Calendar</li>
+                    <li>The assignee must first connect their Google Calendar on their dashboard</li>
+                    <li>Calendar events include chore details, due date, and notes</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // User calendar status mapping
+    const userCalendarStatus = {
+        {% for user in users %}
+            {{ user.id }}: {{ 'true' if user.has_calendar else 'false' }},
+        {% endfor %}
+    };
+    
+    // Map of user's completed chores for today
+    const userCompletedChores = {
+        {% for user_id, chore_ids in user_completed_chores.items() %}
+            {{ user_id }}: [{{ chore_ids|join(', ') }}],
+        {% endfor %}
+    };
+    
+    // Map of user's assigned chores by date
+    const userAssignedChores = {
+        {% for key, chore_ids in user_assigned_chores.items() %}
+            "{{ key }}": [{{ chore_ids|join(', ') }}],
+        {% endfor %}
+    };
+    
+    // Function to check if a chore is already completed or assigned for a user on a specific date
+    function checkChoreStatus() {
+        const choreId = parseInt(document.getElementById('chore_id').value);
+        const userId = parseInt(document.getElementById('assignee_id').value);
+        const dueDate = document.getElementById('due_date').value;
+        const submitBtn = document.querySelector('button[type="submit"]');
+        const warningElement = document.getElementById('chore-status-warning');
+        
+        // Remove any existing warning
+        if (warningElement) {
+            warningElement.remove();
+        }
+        
+        // If all fields are selected
+        if (choreId && userId && dueDate) {
+            let warning = null;
+            
+            // Check if this chore is already completed by this user today
+            if (userCompletedChores[userId] && userCompletedChores[userId].includes(choreId) && dueDate === '{{ today.strftime("%Y-%m-%d") }}') {
+                warning = 'This user has already completed this chore today.';
+            }
+            
+            // Check if this chore is already assigned to this user for this date
+            const assignmentKey = `${userId}_${dueDate}`;
+            if (userAssignedChores[assignmentKey] && userAssignedChores[assignmentKey].includes(choreId)) {
+                warning = 'This chore is already assigned to this user for this date.';
+            }
+            
+            // Display warning if needed
+            if (warning) {
+                const warningDiv = document.createElement('div');
+                warningDiv.id = 'chore-status-warning';
+                warningDiv.className = 'alert alert-warning mt-3';
+                warningDiv.innerHTML = `<i class="fas fa-exclamation-triangle me-2"></i>${warning}`;
+                document.getElementById('due_date').parentNode.after(warningDiv);
+            }
+        }
+    }
+    
+    // Function to update calendar status indicator
+    function updateCalendarStatus() {
+        const userId = document.getElementById('assignee_id').value;
+        const statusIcon = document.getElementById('calendar-status');
+        const statusText = document.getElementById('calendar-status-text');
+        const addToCalendar = document.getElementById('add_to_calendar');
+        
+        if (userId && userCalendarStatus[userId]) {
+            // User has connected calendar
+            statusIcon.classList.remove('bg-warning', 'bg-danger');
+            statusIcon.classList.add('bg-success', 'text-white');
+            statusIcon.setAttribute('data-bs-original-title', 'Google Calendar Connected');
+            statusText.innerHTML = 'This user has Google Calendar connected. Assignments can be added to their calendar.';
+            addToCalendar.disabled = false;
+        } else if (userId) {
+            // User exists but has no connected calendar
+            statusIcon.classList.remove('bg-success', 'bg-danger');
+            statusIcon.classList.add('bg-warning');
+            statusIcon.setAttribute('data-bs-original-title', 'Google Calendar Not Connected');
+            statusText.innerHTML = 'This user has not connected their Google Calendar yet.';
+            addToCalendar.disabled = false;
+            addToCalendar.checked = false;
+        } else {
+            // No user selected
+            statusIcon.classList.remove('bg-success', 'bg-warning');
+            statusIcon.classList.add('bg-secondary', 'text-white');
+            statusIcon.setAttribute('data-bs-original-title', 'Select a user');
+            statusText.innerHTML = 'Select a user to see if they have Google Calendar connected.';
+            addToCalendar.disabled = true;
+        }
+        
+        // Also check chore status
+        checkChoreStatus();
+    }
+    
+    // Initialize tooltips
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+    
+    // Add event listeners
+    document.getElementById('assignee_id').addEventListener('change', updateCalendarStatus);
+    document.getElementById('chore_id').addEventListener('change', checkChoreStatus);
+    document.getElementById('due_date').addEventListener('change', checkChoreStatus);
+    
+    // Initial update
+    document.addEventListener('DOMContentLoaded', function() {
+        updateCalendarStatus();
+        
+        // Set default due date to today if not set
+        if (!document.getElementById('due_date').value) {
+            document.getElementById('due_date').value = '{{ today.strftime("%Y-%m-%d") }}';
+            checkChoreStatus();
+        }
+    });
+</script>
+{% endblock %} 

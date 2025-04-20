@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+
+{% block title %}Add Chore | Household Chore Tracker{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <h1 class="fw-bold mb-0">Add New Chore</h1>
+        <p class="text-muted">Create a new chore for your household</p>
+    </div>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-primary-gradient text-white">
+                <h5 class="mb-0"><i class="fas fa-plus-circle me-2"></i>New Chore Details</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('add_chore') }}">
+                    {{ form.hidden_tag() }}
+                    
+                    <div class="mb-4">
+                        <label for="name" class="form-label">Chore Name</label>
+                        {{ form.name(class="form-control" + (" is-invalid" if form.name.errors else ""), id="name", placeholder="Enter chore name") }}
+                        {% if form.name.errors %}
+                            <div class="invalid-feedback">
+                                {% for error in form.name.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                        <div class="form-text">
+                            Enter a descriptive name for the chore (e.g., "Vacuum Living Room", "Do Dishes").
+                        </div>
+                    </div>
+                    
+                    <div class="d-grid gap-2">
+                        {{ form.submit(class="btn btn-primary") }}
+                        <a href="{{ url_for('chores') }}" class="btn btn-outline-secondary">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i>About Chores</h5>
+            </div>
+            <div class="card-body">
+                <p>Chores you add will be available to all members of your household. Each chore can be:</p>
+                <ul>
+                    <li>Completed by any household member</li>
+                    <li>Shared between multiple users with custom percentage splits</li>
+                    <li>Assigned to specific users with due dates</li>
+                </ul>
+                <p class="mb-0">All chores are worth 1 point when completed at 100%.</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

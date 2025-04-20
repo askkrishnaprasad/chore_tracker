@@ -1,0 +1,208 @@
+{% extends "base.html" %}
+
+{% block title %}Manage Homes | Household Chore Tracker{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <h1 class="fw-bold mb-0">Manage Homes</h1>
+        <p class="text-muted">Create and manage household homes</p>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-md-5">
+        <div class="card">
+            <div class="card-header bg-primary-gradient text-white">
+                <h5 class="mb-0"><i class="fas fa-plus-circle me-2"></i>Add New Home</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('admin_homes') }}">
+                    {{ form.hidden_tag() }}
+                    
+                    <div class="mb-3">
+                        <label for="name" class="form-label">Home Name</label>
+                        {{ form.name(class="form-control" + (" is-invalid" if form.name.errors else ""), id="name", placeholder="Enter home name") }}
+                        {% if form.name.errors %}
+                            <div class="invalid-feedback">
+                                {% for error in form.name.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="d-grid">
+                        {{ form.submit(class="btn btn-primary") }}
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-7">
+        <div class="card">
+            <div class="card-header bg-info-gradient text-white">
+                <h5 class="mb-0"><i class="fas fa-home me-2"></i>Existing Homes</h5>
+            </div>
+            <div class="card-body">
+                {% if homes %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Name</th>
+                                <th>Users</th>
+                                <th>Chores</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for home in homes %}
+                            <tr>
+                                <td>{{ home.id }}</td>
+                                <td>{{ home.name }}</td>
+                                <td>{{ home.users|length }}</td>
+                                <td>{{ home.chores|length }}</td>
+                                <td>
+                                    <button class="btn btn-sm btn-primary edit-home"
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#editHomeModal"
+                                            data-home-id="{{ home.id }}"
+                                            data-home-name="{{ home.name }}">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-danger delete-home"
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#deleteHomeModal"
+                                            data-home-id="{{ home.id }}"
+                                            data-home-name="{{ home.name }}"
+                                            data-has-users="{{ home.users|length > 0 }}">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center text-muted p-4">
+                    <i class="fas fa-home mb-3 fa-2x"></i>
+                    <p>No homes have been created yet. Add your first home using the form.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="alert alert-info mt-4">
+            <i class="fas fa-info-circle me-2"></i>
+            <span>Homes are independent households. Each home has its own set of users, chores, and completion records.</span>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Home Modal -->
+<div class="modal fade" id="editHomeModal" tabindex="-1" aria-labelledby="editHomeModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="editHomeModalLabel">Edit Home</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="editHomeForm" method="POST" action="">
+                <div class="modal-body">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <div class="mb-3">
+                        <label for="edit-home-name" class="form-label">Home Name</label>
+                        <input type="text" class="form-control" id="edit-home-name" name="name" required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Home Modal -->
+<div class="modal fade" id="deleteHomeModal" tabindex="-1" aria-labelledby="deleteHomeModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="deleteHomeModalLabel">Delete Home</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete the home <strong id="deleteHomeName"></strong>?</p>
+                <div id="hasUsersWarning" class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    <span>This home has users assigned to it. You must reassign all users to other homes before deleting.</span>
+                </div>
+                <p class="text-danger" id="deleteHomeWarning">This action cannot be undone. All chores, completions, and assignments associated with this home will be permanently deleted.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form id="deleteHomeForm" method="POST" action="">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="btn btn-danger" id="deleteHomeButton">Delete Home</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Edit home functionality
+        const editButtons = document.querySelectorAll('.edit-home');
+        const editForm = document.getElementById('editHomeForm');
+        const editNameField = document.getElementById('edit-home-name');
+        
+        editButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const homeId = this.getAttribute('data-home-id');
+                const homeName = this.getAttribute('data-home-name');
+                
+                editForm.action = `/admin/edit_home/${homeId}`;
+                editNameField.value = homeName;
+            });
+        });
+        
+        // Delete home functionality
+        const deleteButtons = document.querySelectorAll('.delete-home');
+        const deleteForm = document.getElementById('deleteHomeForm');
+        const deleteHomeName = document.getElementById('deleteHomeName');
+        const hasUsersWarning = document.getElementById('hasUsersWarning');
+        const deleteHomeButton = document.getElementById('deleteHomeButton');
+        const deleteHomeWarning = document.getElementById('deleteHomeWarning');
+        
+        deleteButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const homeId = this.getAttribute('data-home-id');
+                const homeName = this.getAttribute('data-home-name');
+                const hasUsers = this.getAttribute('data-has-users') === 'True';
+                
+                deleteForm.action = `/admin/delete_home/${homeId}`;
+                deleteHomeName.textContent = homeName;
+                
+                // Show/hide warning and disable button if home has users
+                if (hasUsers) {
+                    hasUsersWarning.style.display = 'block';
+                    deleteHomeButton.disabled = true;
+                    deleteHomeWarning.style.display = 'none';
+                } else {
+                    hasUsersWarning.style.display = 'none';
+                    deleteHomeButton.disabled = false;
+                    deleteHomeWarning.style.display = 'block';
+                }
+            });
+        });
+    });
+</script>
+{% endblock %} 

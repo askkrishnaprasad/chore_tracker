@@ -1,0 +1,623 @@
+:root {
+    --primary-color: #4e73df;
+    --secondary-color: #6f42c1;
+    --success-color: #1cc88a;
+    --info-color: #36b9cc;
+    --warning-color: #f6c23e;
+    --danger-color: #e74a3b;
+    --light-color: #f8f9fc;
+    --dark-color: #5a5c69;
+    --gradient-primary: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+    --gradient-secondary: linear-gradient(135deg, #6c757d 0%, #495057 100%);
+    --gradient-success: linear-gradient(135deg, var(--success-color) 0%, #2bd891 100%);
+    --gradient-info: linear-gradient(135deg, var(--info-color) 0%, #4dd4e1 100%);
+    --gradient-warning: linear-gradient(135deg, var(--warning-color) 0%, #ffd54f 100%);
+    --gradient-danger: linear-gradient(135deg, var(--danger-color) 0%, #ff6b6b 100%);
+}
+
+/* Global Styles */
+body {
+    font-family: 'Nunito', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    color: var(--dark-color);
+}
+
+.text-primary {
+    color: var(--primary-color) !important;
+}
+
+.bg-primary-gradient {
+    background: var(--gradient-primary);
+    color: white;
+}
+
+.bg-secondary-gradient {
+    background: var(--gradient-secondary);
+    color: white;
+}
+
+.bg-success-gradient {
+    background: var(--gradient-success);
+    color: white;
+}
+
+.bg-info-gradient {
+    background: var(--gradient-info);
+    color: white;
+}
+
+.bg-warning-gradient {
+    background: var(--gradient-warning);
+    color: white;
+}
+
+.bg-danger-gradient {
+    background: var(--gradient-danger);
+    color: white;
+}
+
+/* Sidebar Styles - Remove as no longer needed */
+.sidebar {
+    min-height: 100vh;
+}
+
+.sidebar .nav-link {
+    border-radius: 10px;
+    margin-bottom: 5px;
+    transition: all 0.3s;
+}
+
+.sidebar .nav-link.active {
+    background: var(--gradient-primary);
+    box-shadow: 0 4px 10px rgba(78, 115, 223, 0.25);
+}
+
+.sidebar .nav-link:hover:not(.active) {
+    background-color: #f8f9fa;
+}
+
+/* Add new top navbar styles */
+.navbar {
+    border-radius: 0 0 15px 15px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+.navbar .nav-link {
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    margin: 0 0.2rem;
+    transition: all 0.3s;
+}
+
+.navbar .nav-link.active {
+    background: var(--gradient-primary);
+    color: white !important;
+    box-shadow: 0 4px 10px rgba(78, 115, 223, 0.25);
+}
+
+.navbar .nav-link:hover:not(.active) {
+    background-color: rgba(78, 115, 223, 0.1);
+}
+
+.navbar-brand {
+    font-size: 1.5rem;
+    padding: 0.5rem 1rem;
+}
+
+/* Logo icon styling */
+.logo-icon {
+    background: var(--gradient-primary);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    font-size: 1.75rem;
+    transform: rotate(-5deg);
+    filter: drop-shadow(0px 2px 3px rgba(0, 0, 0, 0.1));
+}
+
+/* Home indicator in navbar */
+.navbar-home-indicator {
+    display: flex;
+    align-items: center;
+    padding: 0.5rem 1rem;
+    margin: 0 0.5rem;
+    border-radius: 8px;
+    background: linear-gradient(135deg, #e6e9ff 0%, #d4d9f6 100%);
+    color: var(--primary-color);
+    font-weight: 600;
+    border-left: 4px solid var(--primary-color);
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+}
+
+.navbar-home-indicator i {
+    color: var(--primary-color);
+    opacity: 0.8;
+}
+
+/* Content Wrapper - Adjust margin for top navbar */
+.content-wrapper {
+    margin-top: 1.5rem;
+    animation: fadeIn 0.5s ease-in-out;
+}
+
+/* Card Styles */
+.card {
+    border: none;
+    border-radius: 15px;
+    box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.1);
+    margin-bottom: 20px;
+    overflow: hidden;
+    transition: transform 0.3s ease;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+}
+
+.card-header {
+    padding: 1rem 1.35rem;
+    background-color: white;
+    border-bottom: 1px solid #e3e6f0;
+}
+
+.card-gradient-header {
+    padding: 1.5rem;
+    color: white;
+    border-bottom: none;
+}
+
+.card-gradient-primary .card-header {
+    background: var(--gradient-primary);
+}
+
+.card-gradient-success .card-header {
+    background: var(--gradient-success);
+}
+
+.card-gradient-info .card-header {
+    background: var(--gradient-info);
+}
+
+.card-gradient-warning .card-header {
+    background: var(--gradient-warning);
+}
+
+.card-gradient-danger .card-header {
+    background: var(--gradient-danger);
+}
+
+/* Dashboard Stats Cards */
+.stat-card {
+    border-radius: 15px;
+    padding: 20px;
+    text-align: center;
+    color: white;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+}
+
+.stat-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
+}
+
+.stat-card .stat-icon {
+    margin-bottom: 15px;
+    font-size: 2rem;
+}
+
+.stat-card .stat-value {
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 5px;
+}
+
+.stat-card .stat-label {
+    font-size: 0.875rem;
+    text-transform: uppercase;
+    opacity: 0.8;
+}
+
+/* Chart Styles */
+.chart-container {
+    position: relative;
+    margin: auto;
+    height: 300px;
+    width: 100%;
+}
+
+/* Chart Tabs Styles */
+#chartTabs {
+    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+#chartTabs .nav-link {
+    border: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: 0;
+    font-weight: 600;
+    color: var(--dark-color);
+    opacity: 0.7;
+    transition: all 0.3s ease;
+}
+
+#chartTabs .nav-link:hover {
+    opacity: 1;
+    background-color: rgba(0, 0, 0, 0.02);
+}
+
+#chartTabs .nav-link.active {
+    color: var(--primary-color);
+    opacity: 1;
+    border-bottom: 3px solid var(--primary-color);
+}
+
+/* Form Styles */
+.form-control, .form-select {
+    border-radius: 10px;
+    padding: 0.75rem 1rem;
+    border: 1px solid #e3e6f0;
+    font-size: 0.9rem;
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 0.25rem rgba(78, 115, 223, 0.25);
+}
+
+.btn {
+    padding: 0.75rem 1.5rem;
+    border-radius: 10px;
+    font-weight: 600;
+    transition: all 0.3s;
+}
+
+.btn-primary {
+    background: var(--gradient-primary);
+    border: none;
+}
+
+.btn-success {
+    background: var(--gradient-success);
+    border: none;
+}
+
+.btn-info {
+    background: var(--gradient-info);
+    border: none;
+}
+
+.btn-warning {
+    background: var(--gradient-warning);
+    border: none;
+}
+
+.btn-danger {
+    background: var(--gradient-danger);
+    border: none;
+}
+
+/* Chore List Styles */
+.chore-list-item {
+    background-color: white;
+    border-radius: 10px;
+    padding: 15px;
+    margin-bottom: 10px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+    transition: all 0.3s;
+}
+
+.chore-list-item:hover {
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+}
+
+.chore-list-item .form-check-input {
+    width: 24px;
+    height: 24px;
+    margin-top: 0;
+}
+
+.chore-list-item .form-check-label {
+    margin-left: 10px;
+    font-weight: 500;
+}
+
+.chore-list-item.completed {
+    opacity: 0.7;
+}
+
+.chore-list-item.completed .form-check-label {
+    text-decoration: line-through;
+}
+
+/* Badge alignment in chore list */
+.chore-list-item .badge {
+    height: 31px;
+    padding: 0 10px;
+}
+
+/* Search Styles */
+.search-container {
+    margin-bottom: 20px;
+    position: relative;
+}
+
+.search-container .form-control {
+    padding-left: 40px;
+    height: 50px;
+}
+
+.search-container .search-icon {
+    position: absolute;
+    left: 15px;
+    top: 15px;
+    color: var(--primary-color);
+}
+
+/* Animation Styles */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.animated-fade {
+    animation: fadeIn 0.5s ease forwards;
+}
+
+/* Responsive Styles */
+@media (max-width: 992px) {
+    .content-wrapper {
+        animation: fadeIn 0.3s ease forwards;
+    }
+}
+
+/* Assignment Styles */
+.assignment-card {
+    border-left: 4px solid var(--primary-color);
+    background-color: white;
+    border-radius: 10px;
+    padding: 15px;
+    margin-bottom: 15px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+}
+
+.assignment-card.due-soon {
+    border-left-color: var(--warning-color);
+}
+
+.assignment-card.overdue {
+    border-left-color: var(--danger-color);
+}
+
+.assignment-card .due-date {
+    font-size: 0.85rem;
+    color: #6e7687;
+}
+
+.assignment-card .chore-name {
+    font-weight: 600;
+    font-size: 1.1rem;
+    margin-bottom: 5px;
+}
+
+.assignment-card .assigner {
+    font-size: 0.85rem;
+    color: #6e7687;
+}
+
+.assignment-card .notes {
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px dashed #e9ecef;
+}
+
+/* Welcome Page */
+.welcome-header {
+    background: var(--gradient-primary);
+    padding: 80px 0;
+    color: white;
+    text-align: center;
+    margin-bottom: 50px;
+    border-radius: 15px;
+}
+
+.welcome-header h1 {
+    font-size: 3rem;
+    font-weight: 800;
+}
+
+.welcome-header p {
+    font-size: 1.2rem;
+    opacity: 0.9;
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+.feature-card {
+    text-align: center;
+    padding: 30px;
+    height: 100%;
+}
+
+.feature-card i {
+    font-size: 3rem;
+    margin-bottom: 20px;
+    background: var(--gradient-primary);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+/* Auth Pages */
+.auth-container {
+    max-width: 450px;
+    margin: 40px auto;
+}
+
+.auth-card {
+    background-color: white;
+    border-radius: 15px;
+    padding: 30px;
+    box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.1);
+}
+
+.auth-card .card-title {
+    font-weight: 700;
+    text-align: center;
+    margin-bottom: 25px;
+    color: var(--primary-color);
+}
+
+.auth-card .card-subtitle {
+    text-align: center;
+    margin-bottom: 25px;
+    font-size: 0.9rem;
+    color: var(--dark-color);
+}
+
+.auth-divider {
+    text-align: center;
+    position: relative;
+    margin: 20px 0;
+}
+
+.auth-divider::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background-color: #e3e6f0;
+}
+
+.auth-divider span {
+    position: relative;
+    background-color: white;
+    padding: 0 15px;
+    color: var(--dark-color);
+}
+
+/* Responsive optimizations */
+@media (max-width: 767.98px) {
+    /* Optimize the navbar for mobile */
+    .navbar-home-indicator {
+        margin: 0.5rem 0;
+        font-size: 0.9rem;
+    }
+    
+    /* Optimize stat cards for smaller screens */
+    .stat-card {
+        padding: 15px;
+    }
+    
+    .stat-card .stat-icon {
+        font-size: 1.5rem;
+        margin-bottom: 10px;
+    }
+    
+    .stat-card .stat-value {
+        font-size: 1.5rem;
+    }
+    
+    /* Adjust card spacing for mobile */
+    .card {
+        margin-bottom: 15px;
+    }
+    
+    /* Make chart containers responsive */
+    .chart-container {
+        height: 250px;
+    }
+    
+    /* Optimize form elements for touch */
+    .btn, .form-control, .form-select {
+        padding: 0.6rem 1rem;
+        font-size: 1rem;
+    }
+    
+    /* Adjust list items for better touch targets */
+    .list-group-item {
+        padding: 0.75rem;
+    }
+}
+
+/* Extra small devices */
+@media (max-width: 575.98px) {
+    /* Further optimize for very small screens */
+    .stat-card .stat-value {
+        font-size: 1.25rem;
+    }
+    
+    .card-header h5 {
+        font-size: 1rem;
+    }
+    
+    /* Stack horizontally aligned elements */
+    .d-flex.justify-content-between {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+    
+    /* Make sure buttons are big enough to tap */
+    .btn {
+        padding: 0.5rem 0.75rem;
+        min-height: 44px; /* Minimum recommended touch target */
+    }
+    
+    /* Ensure tap targets are large enough */
+    .nav-link, .navbar-brand {
+        padding: 0.5rem;
+        min-height: 44px;
+        display: flex;
+        align-items: center;
+    }
+    
+    /* Reduce some margins/paddings */
+    .mb-4 {
+        margin-bottom: 1rem !important;
+    }
+    
+    .p-4 {
+        padding: 1rem !important;
+    }
+    
+    /* Make export buttons easier to tap */
+    .btn-outline-success.mx-2 {
+        margin: 0 0.5rem;
+        min-width: 44px;
+        min-height: 44px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+}
+
+/* Performance optimizations */
+.card, .btn, .form-control, .navbar, .stat-card {
+    will-change: transform;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    /* Reduce animations for users who prefer reduced motion */
+    .card, .btn {
+        transition: none !important;
+    }
+    
+    .card:hover {
+        transform: none !important;
+    }
+    
+    .stat-card:hover {
+        transform: none !important;
+    }
+    
+    .animated-fade {
+        animation: none !important;
+    }
+}
+
+/* Improve rendering performance by optimizing paint operations */
+.card, .navbar, .stat-card {
+    backface-visibility: hidden;
+    transform: translateZ(0);
+} 

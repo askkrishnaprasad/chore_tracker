@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+
+{% block title %}Register | Household Chore Tracker{% endblock %}
+
+{% block content %}
+<div class="auth-container">
+    <div class="text-center mb-4">
+        <h2 class="fw-bold text-primary mb-2">Create an Account</h2>
+        <p class="text-muted">Join the Household Chore Tracker community</p>
+    </div>
+    
+    <div class="auth-card">
+        <form method="POST" action="{{ url_for('register') }}">
+            {{ form.hidden_tag() }}
+            
+            <div class="mb-3">
+                <label for="username" class="form-label">Username</label>
+                {{ form.username(class="form-control" + (" is-invalid" if form.username.errors else ""), id="username", placeholder="Choose a username") }}
+                {% if form.username.errors %}
+                    <div class="invalid-feedback">
+                        {% for error in form.username.errors %}
+                            {{ error }}
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+            
+            <div class="mb-3">
+                <label for="password" class="form-label">Password</label>
+                {{ form.password(class="form-control" + (" is-invalid" if form.password.errors else ""), id="password", placeholder="Create a password") }}
+                {% if form.password.errors %}
+                    <div class="invalid-feedback">
+                        {% for error in form.password.errors %}
+                            {{ error }}
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+            
+            <div class="mb-4">
+                <label for="confirm_password" class="form-label">Confirm Password</label>
+                {{ form.confirm_password(class="form-control" + (" is-invalid" if form.confirm_password.errors else ""), id="confirm_password", placeholder="Confirm your password") }}
+                {% if form.confirm_password.errors %}
+                    <div class="invalid-feedback">
+                        {% for error in form.confirm_password.errors %}
+                            {{ error }}
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+            
+            <div class="d-grid gap-2">
+                {{ form.submit(class="btn btn-primary") }}
+            </div>
+        </form>
+        
+        <div class="text-center mt-4">
+            <p class="mb-0">Already have an account? <a href="{{ url_for('login') }}" class="text-primary fw-bold">Login</a></p>
+        </div>
+        
+        <div class="mt-4 small">
+            <p class="text-muted text-center">
+                Note: The first registered user becomes the global admin.
+            </p>
+        </div>
+    </div>
+</div>
+{% endblock %} 

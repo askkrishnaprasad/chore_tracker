@@ -1,0 +1,636 @@
+{% extends "base.html" %}
+
+{% block title %}Chore History | Household Chore Tracker{% endblock %}
+
+{% block styles %}
+<style>
+    .collapse-toggle-btn {
+        width: 140px;
+        min-width: 140px;
+        max-width: 140px;
+        text-align: center;
+        display: inline-flex;
+        justify-content: center;
+        align-items: center;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-6">
+        <h1 class="fw-bold mb-0">Chore History</h1>
+        <p class="text-muted">View the history of chore creation and edits</p>
+    </div>
+    <div class="col-md-6 text-md-end">
+        <a href="{{ url_for('chores') }}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left me-2"></i>Back to Chores
+        </a>
+    </div>
+</div>
+
+<!-- Completions History -->
+<div class="card mt-4">
+    <div class="card-header bg-success-gradient text-white">
+        <h5 class="mb-0"><i class="fas fa-check-circle me-2"></i>Chore Completion History</h5>
+    </div>
+    
+    <!-- Date Filter Form -->
+    <div class="card-body border-bottom pb-3">
+        <form id="date-filter-form" class="row align-items-end g-3">
+            <div class="col-lg-5 col-md-4">
+                <label for="filter-date" class="form-label">Filter by Date</label>
+                <input type="date" class="form-control" id="filter-date" value="{{ today }}">
+            </div>
+            <div class="col-lg-2 col-md-3 col-6">
+                <button type="button" id="filter-btn" class="btn btn-primary w-100">Filter</button>
+            </div>
+            <div class="col-lg-2 col-md-3 col-6">
+                <button type="button" id="clear-filter-btn" class="btn btn-outline-secondary w-100">Show All</button>
+            </div>
+            <div class="col-lg-3 col-md-2"></div>
+        </form>
+    </div>
+    
+    <div class="card-body p-0">
+        {% if completions %}
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0" id="completions-table">
+                    <thead class="bg-light">
+                        <tr>
+                            <th>Chore</th>
+                            <th>User</th>
+                            <th>Date</th>
+                            <th>Percentage</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for completion in completions %}
+                        <tr class="completion-row" data-completion-date="{{ completion.date.strftime('%Y-%m-%d') }}">
+                            <td>{{ completion.chore.name }}</td>
+                            <td>{{ completion.user.username }}</td>
+                            <td>{{ completion.date.strftime('%b %d, %Y') }}</td>
+                            <td>{{ (completion.percentage * 100)|int }}%</td>
+                            <td>
+                                <span class="badge {% if completion.status == 'active' %}bg-success{% elif completion.status == 'challenged' %}bg-warning{% else %}bg-secondary{% endif %}">
+                                    {{ completion.status | capitalize }}
+                                </span>
+                            </td>
+                            <td>
+                                {% if completion.status == 'active' and completion.user.id != current_user.id %}
+                                <button class="btn btn-sm btn-warning challenge-btn" 
+                                        data-bs-toggle="modal" 
+                                        data-bs-target="#challengeModal"
+                                        data-completion-id="{{ completion.id }}"
+                                        data-chore-name="{{ completion.chore.name }}"
+                                        data-user-name="{{ completion.user.username }}">
+                                    Challenge
+                                </button>
+                                {% elif completion.status == 'challenged' and completion.user.id == current_user.id %}
+                                <button class="btn btn-sm btn-info defend-btn"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#defendModal"
+                                        data-challenge-id="{{ completion.challenges[0].id }}"
+                                        data-chore-name="{{ completion.chore.name }}"
+                                        data-challenger="{{ completion.challenges[0].challenger.username }}">
+                                    Defend
+                                </button>
+                                {% else %}
+                                -
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="p-4 text-center text-muted">
+                <i class="fas fa-check-circle mb-3 fa-2x"></i>
+                <p>No chore completions recorded yet.</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Challenges Section -->
+<div class="card mt-4">
+    <div class="card-header bg-warning-gradient text-white">
+        <h5 class="mb-0"><i class="fas fa-exclamation-triangle me-2"></i>Pending Challenges</h5>
+    </div>
+    <div class="card-body p-0">
+        {% if challenges %}
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="bg-light">
+                        <tr>
+                            <th>Chore</th>
+                            <th>Challenger</th>
+                            <th>Challenged</th>
+                            <th>Date</th>
+                            <th>Status</th>
+                            <th>Reason</th>
+                            <th>Response</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for challenge in challenges %}
+                        <tr>
+                            <td>{{ challenge.chore.name }}</td>
+                            <td>{{ challenge.challenger.username }}</td>
+                            <td>{{ challenge.challenged.username }}</td>
+                            <td>{{ challenge.challenge_date.strftime('%b %d, %Y') }}</td>
+                            <td>
+                                <span class="badge bg-warning">
+                                    Pending
+                                </span>
+                            </td>
+                            <td>{{ challenge.reason }}</td>
+                            <td>
+                                {% if challenge.defense_comment %}
+                                {{ challenge.defense_comment }}
+                                {% else %}
+                                No response yet
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="p-4 text-center text-muted">
+                <i class="fas fa-exclamation-triangle mb-3 fa-2x"></i>
+                <p>No pending challenges at the moment. Resolved challenges (accepted or defended) will not appear here.</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Pending Approval Challenges Section -->
+<div class="card mt-4">
+    <div class="card-header bg-primary-gradient text-white">
+        <h5 class="mb-0"><i class="fas fa-hourglass-half me-2"></i>Pending Approval Challenges</h5>
+    </div>
+    <div class="card-body p-0">
+        {% set pending_approval_challenges = resolved_challenges|selectattr('status', 'equalto', 'pending_approval')|list %}
+        {% if pending_approval_challenges %}
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="bg-light">
+                        <tr>
+                            <th>Chore</th>
+                            <th>Challenger</th>
+                            <th>Challenged</th>
+                            <th>Challenge Date</th>
+                            <th>Status</th>
+                            <th>Proposed Adjustment</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for challenge in pending_approval_challenges %}
+                        <tr>
+                            <td>{{ challenge.chore.name }}</td>
+                            <td>{{ challenge.challenger.username }}</td>
+                            <td>{{ challenge.challenged.username }}</td>
+                            <td>{{ challenge.challenge_date.strftime('%b %d, %Y') }}</td>
+                            <td>
+                                <span class="badge bg-primary">
+                                    Awaiting Approval
+                                </span>
+                            </td>
+                            <td>{{ (challenge.adjustment_percentage * 100)|int }}%</td>
+                            <td>
+                                {% if challenge.challenger_id == current_user.id %}
+                                    <div class="d-flex">
+                                        <form method="POST" action="{{ url_for('approve_challenge', challenge_id=challenge.id, action='approve') }}" class="me-2">
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                            <button type="submit" class="btn btn-sm btn-success">
+                                                <i class="fas fa-check me-1"></i>Approve
+                                            </button>
+                                        </form>
+                                        <form method="POST" action="{{ url_for('approve_challenge', challenge_id=challenge.id, action='reject') }}">
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                            <button type="submit" class="btn btn-sm btn-danger">
+                                                <i class="fas fa-times me-1"></i>Reject
+                                            </button>
+                                        </form>
+                                    </div>
+                                {% else %}
+                                    <span class="text-muted">Waiting for challenger approval</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="p-4 text-center text-muted">
+                <i class="fas fa-hourglass-half mb-3 fa-2x"></i>
+                <p>No challenges awaiting approval at the moment.</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Resolved Challenges Section -->
+<div class="card mt-4">
+    <div class="card-header bg-info-gradient text-white d-flex justify-content-between align-items-center">
+        <h5 class="mb-0"><i class="fas fa-check-circle me-2"></i>Resolved Challenges</h5>
+        <button class="btn btn-sm btn-light collapse-toggle-btn" type="button" data-bs-toggle="collapse" data-bs-target="#resolvedChallengesCollapse" aria-expanded="false" aria-controls="resolvedChallengesCollapse">
+            <i class="fas fa-chevron-down resolved-toggle-icon"></i> <span class="resolved-toggle-text">Show Resolved</span>
+        </button>
+    </div>
+    <div class="collapse" id="resolvedChallengesCollapse">
+        <div class="card-body p-0">
+            {% set accepted_defended_challenges = resolved_challenges|selectattr('status', 'in', ['accepted', 'defended'])|list %}
+            {% if accepted_defended_challenges %}
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="bg-light">
+                            <tr>
+                                <th>Chore</th>
+                                <th>Challenger</th>
+                                <th>Challenged</th>
+                                <th>Challenge Date</th>
+                                <th>Resolution Date</th>
+                                <th>Status</th>
+                                <th>Reason</th>
+                                <th>Response</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for challenge in accepted_defended_challenges %}
+                            <tr>
+                                <td>{{ challenge.chore.name }}</td>
+                                <td>{{ challenge.challenger.username }}</td>
+                                <td>{{ challenge.challenged.username }}</td>
+                                <td>{{ challenge.challenge_date.strftime('%b %d, %Y') }}</td>
+                                <td>
+                                    {% if challenge.resolution_date %}
+                                        {{ challenge.resolution_date.strftime('%b %d, %Y') }}
+                                    {% else %}
+                                        -
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <span class="badge 
+                                        {% if challenge.status == 'accepted' %}bg-success
+                                        {% elif challenge.status == 'defended' %}bg-info
+                                        {% elif challenge.status == 'pending_approval' %}bg-primary
+                                        {% else %}bg-secondary{% endif %}">
+                                        {% if challenge.status == 'pending_approval' %}
+                                            Awaiting Approval
+                                        {% else %}
+                                            {{ challenge.status | capitalize }}
+                                        {% endif %}
+                                    </span>
+                                </td>
+                                <td>{{ challenge.reason }}</td>
+                                <td>
+                                    {% if challenge.status == 'defended' and challenge.defense_comment %}
+                                        {{ challenge.defense_comment }}
+                                    {% elif challenge.status == 'accepted' and challenge.adjustment_percentage is not none %}
+                                        Adjusted to {{ (challenge.adjustment_percentage * 100)|int }}%
+                                    {% else %}
+                                        -
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="p-4 text-center text-muted">
+                    <i class="fas fa-history mb-3 fa-2x"></i>
+                    <p>No resolved challenges available yet.</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Chore History List (moved to bottom) -->
+<div class="card mt-4">
+    <div class="card-header bg-primary-gradient text-white d-flex justify-content-between align-items-center">
+        <h5 class="mb-0"><i class="fas fa-history me-2"></i>Chore Creation History</h5>
+        <button class="btn btn-sm btn-light collapse-toggle-btn" type="button" data-bs-toggle="collapse" data-bs-target="#choreHistoryCollapse" aria-expanded="false" aria-controls="choreHistoryCollapse">
+            <i class="fas fa-chevron-down toggle-icon"></i> <span class="toggle-text">Show History</span>
+        </button>
+    </div>
+    <div class="collapse" id="choreHistoryCollapse">
+        <div class="card-body p-0">
+            {% if chore_history %}
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="bg-light">
+                            <tr>
+                                <th>Chore Name</th>
+                                <th>Created By</th>
+                                <th>Action</th>
+                                <th>Previous Name</th>
+                                <th>Date</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for entry in chore_history %}
+                            <tr>
+                                <td>{{ entry.chore.name }}</td>
+                                <td>{{ entry.creator.username }}</td>
+                                <td>
+                                    <span class="badge {% if entry.action == 'created' %}bg-success{% elif entry.action == 'edited' %}bg-primary{% else %}bg-danger{% endif %}">
+                                        {{ entry.action | capitalize }}
+                                    </span>
+                                </td>
+                                <td>{% if entry.previous_name %}{{ entry.previous_name }}{% else %}-{% endif %}</td>
+                                <td>{{ entry.creation_date.strftime('%b %d, %Y %H:%M') }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="p-4 text-center text-muted">
+                    <i class="fas fa-history mb-3 fa-2x"></i>
+                    <p>No chore history available yet.</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Challenge Modal -->
+<div class="modal fade" id="challengeModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-warning-gradient text-white">
+                <h5 class="modal-title">Challenge Chore Completion</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="POST" action="{{ url_for('challenge_chore') }}">
+                <div class="modal-body">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <input type="hidden" name="completion_id" id="challenge-completion-id">
+                    
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        You are challenging <span id="challenge-user-name" class="fw-bold"></span>'s completion of <span id="challenge-chore-name" class="fw-bold"></span>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="challenge-reason" class="form-label">Reason for Challenge</label>
+                        <textarea class="form-control" name="reason" id="challenge-reason" rows="3" required 
+                                  placeholder="Explain why you are challenging this chore completion..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-warning">Submit Challenge</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Defend Modal -->
+<div class="modal fade" id="defendModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-info-gradient text-white">
+                <h5 class="modal-title">Defend Chore Challenge</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="POST" action="{{ url_for('defend_challenge') }}">
+                <div class="modal-body">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <input type="hidden" name="challenge_id" id="defend-challenge-id">
+                    
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <span id="defend-challenger" class="fw-bold"></span> has challenged your completion of <span id="defend-chore-name" class="fw-bold"></span>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">How would you like to respond?</label>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="response_type" id="defend-response" value="defend" checked>
+                            <label class="form-check-label" for="defend-response">
+                                Defend my completion
+                            </label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="response_type" id="accept-response" value="accept">
+                            <label class="form-check-label" for="accept-response">
+                                Accept the challenge and adjust my points
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div id="defend-details">
+                        <div class="mb-3">
+                            <label for="defense-comment" class="form-label">Your Defense</label>
+                            <textarea class="form-control" name="defense_comment" id="defense-comment" rows="3" 
+                                    placeholder="Explain why your completion is valid..."></textarea>
+                        </div>
+                    </div>
+                    
+                    <div id="adjust-details" class="d-none">
+                        <div class="mb-3">
+                            <label for="adjustment-percentage" class="form-label">Adjusted Percentage</label>
+                            <div class="input-group">
+                                <input type="number" class="form-control" name="adjustment_percentage" id="adjustment-percentage" 
+                                       min="0" max="100" value="50">
+                                <span class="input-group-text">%</span>
+                            </div>
+                            <div class="form-text">Enter the percentage you think is fair.</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-info">Submit Response</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Handle history toggle button
+        const historyCollapse = document.getElementById('choreHistoryCollapse');
+        const toggleIcon = document.querySelector('.toggle-icon');
+        const toggleText = document.querySelector('.toggle-text');
+        
+        historyCollapse.addEventListener('show.bs.collapse', function () {
+            toggleIcon.classList.remove('fa-chevron-down');
+            toggleIcon.classList.add('fa-chevron-up');
+            toggleText.textContent = 'Hide History';
+        });
+        
+        historyCollapse.addEventListener('hide.bs.collapse', function () {
+            toggleIcon.classList.remove('fa-chevron-up');
+            toggleIcon.classList.add('fa-chevron-down');
+            toggleText.textContent = 'Show History';
+        });
+        
+        // Handle resolved challenges toggle button
+        const resolvedCollapse = document.getElementById('resolvedChallengesCollapse');
+        const resolvedToggleIcon = document.querySelector('.resolved-toggle-icon');
+        const resolvedToggleText = document.querySelector('.resolved-toggle-text');
+        
+        resolvedCollapse.addEventListener('show.bs.collapse', function () {
+            resolvedToggleIcon.classList.remove('fa-chevron-down');
+            resolvedToggleIcon.classList.add('fa-chevron-up');
+            resolvedToggleText.textContent = 'Hide Resolved';
+        });
+        
+        resolvedCollapse.addEventListener('hide.bs.collapse', function () {
+            resolvedToggleIcon.classList.remove('fa-chevron-up');
+            resolvedToggleIcon.classList.add('fa-chevron-down');
+            resolvedToggleText.textContent = 'Show Resolved';
+        });
+        
+        // Set today's date as default for filter
+        const todayDate = new Date().toISOString().split('T')[0];
+        document.getElementById('filter-date').value = todayDate;
+        
+        // Date filtering functionality
+        const filterBtn = document.getElementById('filter-btn');
+        const clearFilterBtn = document.getElementById('clear-filter-btn');
+        const filterDate = document.getElementById('filter-date');
+        const completionRows = document.querySelectorAll('.completion-row');
+        
+        filterBtn.addEventListener('click', function() {
+            const selectedDate = filterDate.value;
+            let matchFound = false;
+            
+            completionRows.forEach(row => {
+                const rowDate = row.getAttribute('data-completion-date');
+                if (rowDate === selectedDate) {
+                    row.style.display = '';
+                    matchFound = true;
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+            
+            // Show message if no matches
+            const table = document.getElementById('completions-table');
+            let noMatchesRow = document.getElementById('no-matches-row');
+            
+            if (!matchFound) {
+                if (!noMatchesRow) {
+                    const tbody = table.querySelector('tbody');
+                    noMatchesRow = document.createElement('tr');
+                    noMatchesRow.id = 'no-matches-row';
+                    noMatchesRow.innerHTML = `
+                        <td colspan="6" class="text-center py-3 text-muted">
+                            <i class="fas fa-info-circle me-2"></i>No completions found for this date.
+                        </td>
+                    `;
+                    tbody.appendChild(noMatchesRow);
+                } else {
+                    noMatchesRow.style.display = '';
+                }
+            } else if (noMatchesRow) {
+                noMatchesRow.style.display = 'none';
+            }
+        });
+        
+        clearFilterBtn.addEventListener('click', function() {
+            // Show all rows
+            completionRows.forEach(row => {
+                row.style.display = '';
+            });
+            
+            // Hide no matches message if it exists
+            const noMatchesRow = document.getElementById('no-matches-row');
+            if (noMatchesRow) {
+                noMatchesRow.style.display = 'none';
+            }
+            
+            // Reset the date filter to today
+            filterDate.value = todayDate;
+        });
+        
+        // Handle challenge button clicks
+        const challengeButtons = document.querySelectorAll('.challenge-btn');
+        const challengeCompletionIdInput = document.getElementById('challenge-completion-id');
+        const challengeUserName = document.getElementById('challenge-user-name');
+        const challengeChoreName = document.getElementById('challenge-chore-name');
+        
+        challengeButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const completionId = this.getAttribute('data-completion-id');
+                const choreName = this.getAttribute('data-chore-name');
+                const userName = this.getAttribute('data-user-name');
+                
+                challengeCompletionIdInput.value = completionId;
+                challengeUserName.textContent = userName;
+                challengeChoreName.textContent = choreName;
+            });
+        });
+        
+        // Handle defend button clicks
+        const defendButtons = document.querySelectorAll('.defend-btn');
+        const defendChallengeIdInput = document.getElementById('defend-challenge-id');
+        const defendChallenger = document.getElementById('defend-challenger');
+        const defendChoreName = document.getElementById('defend-chore-name');
+        
+        defendButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const challengeId = this.getAttribute('data-challenge-id');
+                const choreName = this.getAttribute('data-chore-name');
+                const challenger = this.getAttribute('data-challenger');
+                
+                defendChallengeIdInput.value = challengeId;
+                defendChallenger.textContent = challenger;
+                defendChoreName.textContent = choreName;
+            });
+        });
+        
+        // Handle response type toggling
+        const defendResponse = document.getElementById('defend-response');
+        const acceptResponse = document.getElementById('accept-response');
+        const defendDetails = document.getElementById('defend-details');
+        const adjustDetails = document.getElementById('adjust-details');
+        const defenseComment = document.getElementById('defense-comment');
+        const adjustmentPercentage = document.getElementById('adjustment-percentage');
+        
+        defendResponse.addEventListener('change', function() {
+            if (this.checked) {
+                defendDetails.classList.remove('d-none');
+                adjustDetails.classList.add('d-none');
+                defenseComment.setAttribute('required', '');
+                adjustmentPercentage.removeAttribute('required');
+            }
+        });
+        
+        acceptResponse.addEventListener('change', function() {
+            if (this.checked) {
+                defendDetails.classList.add('d-none');
+                adjustDetails.classList.remove('d-none');
+                defenseComment.removeAttribute('required');
+                adjustmentPercentage.setAttribute('required', '');
+            }
+        });
+        
+        // Set initial required state
+        if (defendResponse.checked) {
+            defenseComment.setAttribute('required', '');
+            adjustmentPercentage.removeAttribute('required');
+        } else if (acceptResponse.checked) {
+            defenseComment.removeAttribute('required');
+            adjustmentPercentage.setAttribute('required', '');
+        }
+    });
+</script>
+{% endblock %} 

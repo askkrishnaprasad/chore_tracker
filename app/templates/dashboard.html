@@ -1,0 +1,282 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard | Household Chore Tracker{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-12">
+        <h1 class="fw-bold mb-0">Dashboard</h1>
+        <p class="text-muted">Welcome back, {{ current_user.username }}</p>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <!-- User Stats Cards -->
+    {% for user in home_users %}
+    <div class="col-md-6 {% if home_users|length == 2 %}col-lg-6{% elif home_users|length == 1 %}col-lg-12{% else %}col-lg-4{% endif %}">
+        <div class="stat-card bg-primary-gradient">
+            <div class="stat-icon">
+                <i class="fas fa-user"></i>
+            </div>
+            <div class="stat-value">{{ user_stats[user.id]['total_points']|round(1) }}</div>
+            <div class="stat-label">{{ user.username }}'s Total Points</div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Today's Activity and Pending Tasks -->
+<div class="row g-4 mb-4">
+    <div class="col-lg-6">
+        <div class="card h-100">
+            <div class="card-header bg-primary-gradient text-white">
+                <h5 class="mb-0"><i class="fas fa-calendar-day me-2"></i>Today's Activity</h5>
+            </div>
+            <div class="card-body p-0">
+                {% if today_chores %}
+                <ul class="list-group list-group-flush">
+                    {% for completion in today_chores %}
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <div>
+                            <span class="fw-medium">{{ completion.chore.name }}</span>
+                            <span class="badge bg-primary ms-2">{{ (completion.percentage * 100)|int }}%</span>
+                        </div>
+                        <small class="text-muted">by {{ completion.user.username }}</small>
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <div class="p-4 text-center text-muted">
+                    <i class="fas fa-info-circle mb-3 fa-2x"></i>
+                    <p>No chores have been completed today.</p>
+                    <a href="{{ url_for('chores') }}" class="btn btn-primary btn-sm">Log a Chore</a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-6">
+        <div class="card h-100">
+            <div class="card-header bg-info-gradient text-white">
+                <h5 class="mb-0"><i class="fas fa-tasks me-2"></i>Pending Assignments</h5>
+            </div>
+            <div class="card-body p-0">
+                {% if pending_assignments %}
+                <ul class="list-group list-group-flush">
+                    {% for assignment in pending_assignments %}
+                    <li class="list-group-item">
+                        <div class="d-flex justify-content-between align-items-center flex-wrap">
+                            <div class="mb-2 mb-md-0">
+                                <div class="fw-medium">{{ assignment.chore.name }}</div>
+                                <small class="text-muted">
+                                    {% if assignment.assigner_id == current_user.id %}
+                                        <span class="badge bg-secondary">Self-assigned</span>
+                                    {% else %}
+                                        Assigned by {{ assignment.assigner.username }}
+                                    {% endif %}
+                                </small>
+                            </div>
+                            <div class="text-md-end">
+                                <div class="text-danger fw-medium">Due: {{ assignment.due_date.strftime('%b %d, %Y') }}</div>
+                                <form method="POST" action="{{ url_for('complete_chore') }}" class="d-inline">
+                                    <input type="hidden" name="chore_id" value="{{ assignment.chore_id }}">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <input type="hidden" name="completion_date" value="{{ today.strftime('%Y-%m-%d') }}">
+                                    <input type="hidden" name="redirect_to" value="dashboard">
+                                    <button type="submit" class="btn btn-sm btn-success">Complete</button>
+                                </form>
+                            </div>
+                        </div>
+                        {% if assignment.notes %}
+                        <div class="mt-2 small text-muted bg-light p-2 rounded">
+                            {{ assignment.notes }}
+                        </div>
+                        {% endif %}
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <div class="p-4 text-center text-muted">
+                    <i class="fas fa-check-circle mb-3 fa-2x"></i>
+                    <p>You don't have any pending assignments.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Charts Row - Combined Chart -->
+<div class="row g-4 mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header bg-primary-gradient text-white">
+                <h5 class="mb-0"><i class="fas fa-chart-line me-2"></i>Chore Statistics</h5>
+            </div>
+            <div class="card-body">
+                <!-- Chart Tabs -->
+                <ul class="nav nav-tabs mb-4 flex-nowrap overflow-auto" id="chartTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="weekly-tab" data-bs-toggle="tab" data-bs-target="#weekly-chart" type="button" role="tab" aria-selected="true">
+                            <i class="fas fa-calendar-week me-1"></i> <span class="d-none d-sm-inline">Weekly</span>
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="monthly-tab" data-bs-toggle="tab" data-bs-target="#monthly-chart" type="button" role="tab" aria-selected="false">
+                            <i class="fas fa-calendar-alt me-1"></i> <span class="d-none d-sm-inline">Monthly</span>
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="distribution-tab" data-bs-toggle="tab" data-bs-target="#distribution-chart" type="button" role="tab" aria-selected="false">
+                            <i class="fas fa-chart-pie me-1"></i> <span class="d-none d-sm-inline">Distribution</span>
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="yearly-tab" data-bs-toggle="tab" data-bs-target="#yearly-chart" type="button" role="tab" aria-selected="false">
+                            <i class="fas fa-trophy me-1"></i> <span class="d-none d-sm-inline">Total</span>
+                        </button>
+                    </li>
+                </ul>
+                
+                <!-- Chart Content -->
+                <div class="tab-content" id="chartTabsContent">
+                    <div class="tab-pane fade show active" id="weekly-chart" role="tabpanel">
+                        <div class="chart-container">
+                            <canvas id="weeklyChart" data-chart-data='{{ weekly_chart_data|tojson }}' aria-label="Weekly chore completion chart" role="img"></canvas>
+                        </div>
+                    </div>
+                    <div class="tab-pane fade" id="monthly-chart" role="tabpanel">
+                        <div class="chart-container">
+                            <canvas id="monthlyChart" data-chart-data='{{ monthly_chart_data|tojson }}' aria-label="Monthly chore completion chart" role="img"></canvas>
+                        </div>
+                    </div>
+                    <div class="tab-pane fade" id="distribution-chart" role="tabpanel">
+                        <div class="chart-container">
+                            <canvas id="choreDistributionChart" data-chart-data='{{ distribution_chart_data|tojson }}' aria-label="Chore distribution chart" role="img"></canvas>
+                        </div>
+                    </div>
+                    <div class="tab-pane fade" id="yearly-chart" role="tabpanel">
+                        <div class="chart-container">
+                            <canvas id="yearlyChart" data-chart-data='{{ yearly_chart_data|tojson }}' aria-label="Yearly points chart" role="img"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Chore Dominance Section -->
+<div class="row g-4 mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-trophy me-2"></i>Chore Dominance</h5>
+            </div>
+            <div class="card-body">
+                {% if chore_stats %}
+                <div class="row">
+                    {% for chore_id, stats in chore_stats.items() %}
+                    <div class="col-md-6 col-lg-4 mb-3">
+                        <div class="card h-100 border-0 shadow-sm">
+                            <div class="card-body">
+                                <h6 class="card-title fw-bold">{{ stats.chore.name }}</h6>
+                                <div class="d-flex align-items-center mt-2">
+                                    <div class="flex-shrink-0">
+                                        <div class="bg-primary text-white rounded-circle p-2" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;">
+                                            <i class="fas fa-user"></i>
+                                        </div>
+                                    </div>
+                                    <div class="flex-grow-1 ms-3">
+                                        <div class="fw-medium">{{ stats.dominant_user.username }}</div>
+                                        <div class="small text-muted">
+                                            {{ stats.count }} times ({{ (stats.total_percentage * 100)|int }}% of total)
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="text-center text-muted p-4">
+                    <i class="fas fa-info-circle mb-3 fa-2x"></i>
+                    <p>No chore completion data yet. Start logging chores to see dominance stats!</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Google Calendar Integration Status -->
+<div class="row g-4">
+    <div class="col-md-8">
+        <div class="card h-100">
+            <div class="card-header bg-info-gradient text-white">
+                <h5 class="mb-0"><i class="fas fa-calendar-alt me-2"></i>Google Calendar Integration</h5>
+            </div>
+            <div class="card-body d-flex align-items-center">
+                {% if current_user.calendar_token %}
+                <div class="d-flex justify-content-between align-items-center w-100 flex-wrap">
+                    <div class="mb-2 mb-md-0">
+                        <i class="fas fa-check-circle text-success me-2"></i>
+                        <span>Your Google Calendar is connected! Chore assignments will automatically appear in your calendar.</span>
+                    </div>
+                    <a href="{{ url_for('disconnect_calendar') }}" class="btn btn-outline-danger btn-sm">
+                        <i class="fas fa-unlink me-1"></i> Disconnect Calendar
+                    </a>
+                </div>
+                {% else %}
+                <div class="d-flex justify-content-between align-items-center w-100 flex-wrap">
+                    <div class="mb-2 mb-md-0">
+                        <i class="fas fa-info-circle text-warning me-2"></i>
+                        <span>Connect your Google Calendar to have chore assignments automatically added to your calendar.</span>
+                    </div>
+                    <a href="{{ url_for('connect_calendar') }}" class="btn btn-primary btn-sm">
+                        <i class="fab fa-google me-1"></i> Connect Google Calendar
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card h-100">
+            <div class="card-header bg-success-gradient text-white">
+                <h5 class="mb-0"><i class="fas fa-file-export me-2"></i>Export Data</h5>
+            </div>
+            <div class="card-body d-flex align-items-center justify-content-center">
+                <div class="text-center">
+                    <p class="card-text mb-3">Download your chore data:</p>
+                    <div class="d-flex justify-content-center">
+                        <a href="{{ url_for('export_data', period='weekly') }}" class="btn btn-outline-success mx-2" data-bs-toggle="tooltip" title="Weekly Summary">
+                            <i class="fas fa-calendar-week fa-lg"></i>
+                        </a>
+                        <a href="{{ url_for('export_data', period='monthly') }}" class="btn btn-outline-success mx-2" data-bs-toggle="tooltip" title="Monthly Summary">
+                            <i class="fas fa-calendar-alt fa-lg"></i>
+                        </a>
+                        <a href="{{ url_for('export_data', period='ytd') }}" class="btn btn-outline-success mx-2" data-bs-toggle="tooltip" title="Year-to-Date Summary">
+                            <i class="fas fa-calendar-check fa-lg"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Use the optimized chart initialization
+        if (window.choreApp && window.choreApp.initCharts) {
+            window.choreApp.initCharts();
+        }
+    });
+</script>
+{% endblock %} 

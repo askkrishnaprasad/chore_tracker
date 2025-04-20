@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+
+{% block title %}Login | Household Chore Tracker{% endblock %}
+
+{% block content %}
+<div class="auth-container">
+    <div class="text-center mb-4">
+        <h2 class="fw-bold text-primary mb-2">Welcome Back!</h2>
+        <p class="text-muted">Please login to your account</p>
+    </div>
+    
+    <div class="auth-card">
+        <form method="POST" action="{{ url_for('login') }}">
+            {{ form.hidden_tag() }}
+            
+            <div class="mb-3">
+                <label for="username" class="form-label">Username</label>
+                {{ form.username(class="form-control" + (" is-invalid" if form.username.errors else ""), id="username", placeholder="Enter your username") }}
+                {% if form.username.errors %}
+                    <div class="invalid-feedback">
+                        {% for error in form.username.errors %}
+                            {{ error }}
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+            
+            <div class="mb-3">
+                <label for="password" class="form-label">Password</label>
+                {{ form.password(class="form-control" + (" is-invalid" if form.password.errors else ""), id="password", placeholder="Enter your password") }}
+                {% if form.password.errors %}
+                    <div class="invalid-feedback">
+                        {% for error in form.password.errors %}
+                            {{ error }}
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+            
+            <div class="mb-4 form-check">
+                {{ form.remember(class="form-check-input", id="remember") }}
+                <label class="form-check-label" for="remember">Remember me</label>
+            </div>
+            
+            <div class="d-grid gap-2">
+                {{ form.submit(class="btn btn-primary") }}
+            </div>
+        </form>
+        
+        <div class="text-center mt-4">
+            <p class="mb-0">Don't have an account? <a href="{{ url_for('register') }}" class="text-primary fw-bold">Sign up</a></p>
+        </div>
+    </div>
+</div>
+{% endblock %} 

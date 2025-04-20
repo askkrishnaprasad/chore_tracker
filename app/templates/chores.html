@@ -1,0 +1,268 @@
+{% extends "base.html" %}
+
+{% block title %}Chores | Household Chore Tracker{% endblock %}
+
+{% block content %}
+<style>
+    #choreSearchInput.is-focused {
+        box-shadow: 0 0 0 0.25rem rgba(78, 115, 223, 0.25);
+        border-color: #4e73df;
+    }
+    .search-container {
+        position: relative;
+    }
+    .search-results-count {
+        position: absolute;
+        right: 15px;
+        top: 15px;
+        font-size: 0.8rem;
+        color: #6c757d;
+    }
+</style>
+
+<div class="row mb-4">
+    <div class="col-md-6">
+        <h1 class="fw-bold mb-0">Chores</h1>
+        <p class="text-muted">Complete and track your household chores</p>
+    </div>
+    <div class="col-md-6 text-md-end">
+        <a href="{{ url_for('chore_history') }}" class="btn btn-info me-2">
+            <i class="fas fa-history me-2"></i>Chore History
+        </a>
+        <a href="{{ url_for('add_chore') }}" class="btn btn-primary">
+            <i class="fas fa-plus-circle me-2"></i>Add New Chore
+        </a>
+    </div>
+</div>
+
+<!-- Search Bar -->
+<div class="card mb-4">
+    <div class="card-body">
+        <div class="search-container">
+            <i class="fas fa-search search-icon"></i>
+            <input type="text" class="form-control" id="choreSearchInput" placeholder="Search chores..." autocomplete="off">
+            <span class="search-results-count" id="searchResultsCount"></span>
+        </div>
+    </div>
+</div>
+
+<!-- Chore List -->
+<div class="card">
+    <div class="card-header bg-primary-gradient text-white">
+        <h5 class="mb-0"><i class="fas fa-tasks me-2"></i>Chore List</h5>
+    </div>
+    <div class="card-body p-0">
+        {% if chores %}
+            <div class="p-3" id="chore-list-container">
+                {% for chore in chores %}
+                <div class="chore-list-item d-flex align-items-center {% if chore.id in completed_chore_ids %}completed{% endif %}" data-chore-id="{{ chore.id }}">
+                    <div class="form-check flex-grow-1">
+                        <input class="form-check-input" type="checkbox" id="chore-{{ chore.id }}" 
+                               {% if chore.id in completed_chore_ids %}checked disabled{% endif %}>
+                        <label class="form-check-label chore-name" for="chore-{{ chore.id }}">
+                            {{ chore.name }}
+                        </label>
+                    </div>
+                    
+                    <div class="d-flex align-items-center">
+                        <button class="btn btn-sm btn-outline-secondary me-2 edit-chore-btn" data-chore-id="{{ chore.id }}" data-chore-name="{{ chore.name }}" data-bs-toggle="modal" data-bs-target="#editChoreModal">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        
+                        {% if chore.id not in completed_chore_ids %}
+                        <button class="btn btn-sm btn-outline-primary me-2 complete-chore-btn" data-chore-id="{{ chore.id }}" data-bs-toggle="modal" data-bs-target="#completeChoreModal">
+                            Complete
+                        </button>
+                        {% else %}
+                        <span class="badge bg-success me-2 d-inline-block" style="padding: 0.25rem 0.5rem; font-size: 0.875rem; line-height: 1.5;">Completed Today</span>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="p-4 text-center text-muted">
+                <i class="fas fa-tasks mb-3 fa-2x"></i>
+                <p>No chores have been added yet.</p>
+                <a href="{{ url_for('add_chore') }}" class="btn btn-primary btn-sm">Add Your First Chore</a>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Complete Chore Modal -->
+<div class="modal fade" id="completeChoreModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-primary-gradient text-white">
+                <h5 class="modal-title">Complete Chore</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="POST" action="{{ url_for('complete_chore') }}">
+                <div class="modal-body">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <input type="hidden" name="chore_id" id="modal-chore-id">
+                    <input type="hidden" name="user_id" value="{{ current_user.id }}">
+                    
+                    <div class="mb-3">
+                        <label for="completion_date" class="form-label">Completion Date</label>
+                        <input type="date" class="form-control" name="completion_date" id="completion_date" value="{{ today.strftime('%Y-%m-%d') }}" max="{{ today.strftime('%Y-%m-%d') }}" required>
+                        <div class="form-text">You can backdate chore completions for dates you might have missed.</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="is_shared" id="is_shared">
+                            <label class="form-check-label" for="is_shared">
+                                Share this chore with another user
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div id="sharingOptions" class="d-none">
+                        <div class="mb-3">
+                            <label for="percentage" class="form-label">Your contribution percentage:</label>
+                            <div class="input-group">
+                                <input type="number" class="form-control" name="percentage" id="percentage" min="1" max="99" value="50">
+                                <span class="input-group-text">%</span>
+                            </div>
+                            <div class="form-text">The remaining percentage will be credited to the other user.</div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="other_user_id" class="form-label">Share with:</label>
+                            <select class="form-select" name="other_user_id" id="other_user_id">
+                                {% for user in home_users if user.id != current_user.id %}
+                                    <option value="{{ user.id }}">{{ user.username }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Complete Chore</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Chore Modal -->
+<div class="modal fade" id="editChoreModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-secondary text-white">
+                <h5 class="modal-title">Edit Chore</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="POST" action="{{ url_for('edit_chore') }}">
+                <div class="modal-body">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <input type="hidden" name="chore_id" id="edit-chore-id">
+                    
+                    <div class="mb-3">
+                        <label for="edit-chore-name" class="form-label">Chore Name</label>
+                        <input type="text" class="form-control" name="name" id="edit-chore-name" required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Get the current date in the correct format for the date input
+        const today = new Date();
+        const year = today.getFullYear();
+        const month = String(today.getMonth() + 1).padStart(2, '0');
+        const day = String(today.getDate()).padStart(2, '0');
+        const formattedDate = `${year}-${month}-${day}`;
+        
+        // Initialize date field to today with the correct format
+        const completionDateField = document.getElementById('completion_date');
+        completionDateField.value = formattedDate;
+        
+        // Handle complete chore button clicks
+        const completeButtons = document.querySelectorAll('.complete-chore-btn');
+        const modalChoreIdInput = document.getElementById('modal-chore-id');
+        
+        completeButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const choreId = this.getAttribute('data-chore-id');
+                modalChoreIdInput.value = choreId;
+                
+                // Reset date to today with the correct format
+                completionDateField.value = formattedDate;
+            });
+        });
+        
+        // Handle edit chore button clicks
+        const editButtons = document.querySelectorAll('.edit-chore-btn');
+        const editChoreIdInput = document.getElementById('edit-chore-id');
+        const editChoreNameInput = document.getElementById('edit-chore-name');
+        
+        editButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const choreId = this.getAttribute('data-chore-id');
+                const choreName = this.getAttribute('data-chore-name');
+                editChoreIdInput.value = choreId;
+                editChoreNameInput.value = choreName;
+            });
+        });
+        
+        // Handle sharing toggle
+        const isSharedCheckbox = document.getElementById('is_shared');
+        const sharingOptions = document.getElementById('sharingOptions');
+        
+        isSharedCheckbox.addEventListener('change', function() {
+            if (this.checked) {
+                sharingOptions.classList.remove('d-none');
+            } else {
+                sharingOptions.classList.add('d-none');
+            }
+        });
+        
+        // Search functionality
+        const searchInput = document.getElementById('choreSearchInput');
+        const choreItems = document.querySelectorAll('.chore-list-item');
+        const searchResultsCount = document.getElementById('searchResultsCount');
+        
+        searchInput.addEventListener('input', function() {
+            const query = this.value.toLowerCase();
+            let matchCount = 0;
+            
+            // Add 'focused' class when search has content
+            if (query.length > 0) {
+                searchInput.classList.add('is-focused');
+            } else {
+                searchInput.classList.remove('is-focused');
+            }
+            
+            choreItems.forEach(item => {
+                const choreName = item.querySelector('.chore-name').textContent.toLowerCase();
+                if (choreName.includes(query)) {
+                    item.style.display = '';
+                    matchCount++;
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+            
+            // Update search results count
+            if (query.length > 0) {
+                searchResultsCount.textContent = `${matchCount} matches`;
+            } else {
+                searchResultsCount.textContent = '';
+            }
+        });
+    });
+</script>
+{% endblock %} 

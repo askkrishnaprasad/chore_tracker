@@ -1,0 +1,198 @@
+{% extends "base.html" %}
+
+{% block title %}Manage Users | Household Chore Tracker{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <h1 class="fw-bold mb-0">Manage Users</h1>
+        <p class="text-muted">Assign users to homes and manage permissions</p>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-md-5">
+        <div class="card">
+            <div class="card-header bg-primary-gradient text-white">
+                <h5 class="mb-0"><i class="fas fa-user-edit me-2"></i>Update User</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('admin_users') }}">
+                    {{ form.hidden_tag() }}
+                    
+                    <div class="mb-3">
+                        <label for="username" class="form-label">Username</label>
+                        {{ form.username(class="form-control" + (" is-invalid" if form.username.errors else ""), id="username", placeholder="Enter username") }}
+                        {% if form.username.errors %}
+                            <div class="invalid-feedback">
+                                {% for error in form.username.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="home_id" class="form-label">Assign to Home</label>
+                        {{ form.home_id(class="form-select" + (" is-invalid" if form.home_id.errors else ""), id="home_id") }}
+                        {% if form.home_id.errors %}
+                            <div class="invalid-feedback">
+                                {% for error in form.home_id.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-4 form-check">
+                        {{ form.is_admin(class="form-check-input", id="is_admin") }}
+                        <label class="form-check-label" for="is_admin">Admin Privileges</label>
+                    </div>
+                    
+                    <div class="d-grid">
+                        {{ form.submit(class="btn btn-primary") }}
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-7">
+        <div class="card">
+            <div class="card-header bg-info-gradient text-white">
+                <h5 class="mb-0"><i class="fas fa-users me-2"></i>All Users</h5>
+            </div>
+            <div class="card-body">
+                {% if users %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Username</th>
+                                <th>Home</th>
+                                <th>Admin</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for user in users %}
+                            <tr>
+                                <td>{{ user.id }}</td>
+                                <td>{{ user.username }}</td>
+                                <td>
+                                    {% if user.home %}
+                                        {{ user.home.name }}
+                                    {% else %}
+                                        <span class="badge bg-secondary">None</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if user.is_admin %}
+                                        <span class="badge bg-success">Yes</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">No</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <button class="btn btn-sm btn-primary edit-user" 
+                                            data-username="{{ user.username }}"
+                                            data-home-id="{{ user.home_id or 0 }}"
+                                            data-is-admin="{{ 'true' if user.is_admin else 'false' }}">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    {% if user.id != current_user.id %}
+                                    <button class="btn btn-sm btn-danger delete-user"
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#deleteUserModal"
+                                            data-user-id="{{ user.id }}"
+                                            data-username="{{ user.username }}">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center text-muted p-4">
+                    <i class="fas fa-users mb-3 fa-2x"></i>
+                    <p>No users found. Register a new user to see them here.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="alert alert-info mt-4">
+            <i class="fas fa-info-circle me-2"></i>
+            <span>Users can be assigned to a single home or given admin privileges. Admins without a home are global administrators.</span>
+        </div>
+    </div>
+</div>
+
+<!-- Delete User Confirmation Modal -->
+<div class="modal fade" id="deleteUserModal" tabindex="-1" aria-labelledby="deleteUserModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="deleteUserModalLabel">Confirm User Deletion</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete the user <strong id="deleteUsername"></strong>?</p>
+                <p class="text-danger">This action cannot be undone. All of this user's chore history, completions, and assignments will be permanently deleted.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form id="deleteUserForm" method="POST" action="">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="btn btn-danger">Delete User</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const editButtons = document.querySelectorAll('.edit-user');
+        const usernameField = document.getElementById('username');
+        const homeIdField = document.getElementById('home_id');
+        const isAdminField = document.getElementById('is_admin');
+        
+        editButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const username = this.getAttribute('data-username');
+                const homeId = this.getAttribute('data-home-id');
+                const isAdmin = this.getAttribute('data-is-admin') === 'true';
+                
+                usernameField.value = username;
+                homeIdField.value = homeId;
+                isAdminField.checked = isAdmin;
+                
+                // Scroll to the form
+                document.querySelector('.card-header').scrollIntoView({ behavior: 'smooth' });
+            });
+        });
+        
+        // Delete user functionality
+        const deleteButtons = document.querySelectorAll('.delete-user');
+        const deleteForm = document.getElementById('deleteUserForm');
+        const deleteUsername = document.getElementById('deleteUsername');
+        
+        deleteButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const userId = this.getAttribute('data-user-id');
+                const username = this.getAttribute('data-username');
+                
+                deleteForm.action = `/admin/delete_user/${userId}`;
+                deleteUsername.textContent = username;
+            });
+        });
+    });
+</script>
+{% endblock %} 
