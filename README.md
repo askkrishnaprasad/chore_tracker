@@ -57,7 +57,7 @@ A web application for tracking and managing household chores with points, challe
    python run.py
    ```
 
-7. Access the application at http://localhost:5000
+7. Access the application at http://localhost:5001
 
 ### Production Deployment
 

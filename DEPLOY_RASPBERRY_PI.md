@@ -87,7 +87,7 @@ DATABASE_URL=postgresql://choretracker:chorepwd@localhost:5432/chore_tracker
 # Google Calendar API Credentials (replace with your own)
 GOOGLE_CLIENT_ID=your-google-client-id
 GOOGLE_CLIENT_SECRET=your-google-client-secret
-GOOGLE_REDIRECT_URI=http://your-raspberry-pi-ip:5000/calendar/oauth2callback
+GOOGLE_REDIRECT_URI=http://your-raspberry-pi-ip:5001/calendar/oauth2callback
 ```
 
 ### 5. Run Database Migrations
@@ -109,7 +109,7 @@ After=network.target postgresql.service
 [Service]
 User=pi
 WorkingDirectory=/path/to/chore-tracker
-ExecStart=/path/to/chore-tracker/venv/bin/gunicorn -w 3 -b 0.0.0.0:5000 run:app
+ExecStart=/path/to/chore-tracker/venv/bin/gunicorn -w 3 -b 0.0.0.0:5001 run:app
 Restart=always
 Environment="FLASK_ENV=production"
 EnvironmentFile=/path/to/chore-tracker/.env.prod
@@ -150,9 +150,9 @@ sudo tail -f /var/log/postgresql/postgresql-*.log
 ```
 
 ### Firewall Configuration
-Make sure port 5000 is open:
+Make sure port 5001 is open:
 ```bash
-sudo ufw allow 5000/tcp
+sudo ufw allow 5001/tcp
 ```
 
 ## Security Considerations

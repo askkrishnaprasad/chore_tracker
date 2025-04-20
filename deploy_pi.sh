@@ -37,7 +37,7 @@ DATABASE_URL=postgresql://choretracker:chorepwd@localhost:5432/chore_tracker
 # Google Calendar API Credentials (replace with your own values)
 GOOGLE_CLIENT_ID=your-google-client-id
 GOOGLE_CLIENT_SECRET=your-google-client-secret
-GOOGLE_REDIRECT_URI=http://your-raspberry-pi-ip:5000/calendar/oauth2callback
+GOOGLE_REDIRECT_URI=http://your-raspberry-pi-ip:5001/calendar/oauth2callback
 EOL
 
 # Set up systemd service
@@ -50,7 +50,7 @@ After=network.target postgresql.service
 [Service]
 User=pi
 WorkingDirectory='$(pwd)'
-ExecStart='$(pwd)'/venv/bin/gunicorn -w 3 -b 0.0.0.0:5000 run:app
+ExecStart='$(pwd)'/venv/bin/gunicorn -w 3 -b 0.0.0.0:5001 run:app
 Restart=always
 Environment="FLASK_ENV=production"
 EnvironmentFile='$(pwd)'/.env.prod
@@ -67,6 +67,6 @@ sudo systemctl start chore-tracker.service
 
 # Final instructions
 echo "Deployment complete!"
-echo "The application should be running on port 5000"
+echo "The application should be running on port 5001"
 echo "Check service status with: sudo systemctl status chore-tracker.service"
 echo "View logs with: sudo journalctl -u chore-tracker.service" 

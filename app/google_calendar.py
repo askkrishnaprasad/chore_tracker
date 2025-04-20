@@ -9,7 +9,7 @@ from app import db
 # Load API credentials from environment variables
 CLIENT_ID = os.environ.get('GOOGLE_CLIENT_ID')
 CLIENT_SECRET = os.environ.get('GOOGLE_CLIENT_SECRET')
-REDIRECT_URI = os.environ.get('GOOGLE_REDIRECT_URI', 'http://localhost:5000/calendar/oauth2callback')
+REDIRECT_URI = os.environ.get('GOOGLE_REDIRECT_URI', 'http://localhost:5001/calendar/oauth2callback')
 
 # Define OAuth2 scopes
 SCOPES = ['https://www.googleapis.com/auth/calendar.events']
