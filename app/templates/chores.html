@@ -204,6 +204,40 @@
             });
         });
         
+        // Handle checkbox interactions for mobile and desktop
+        const checkboxes = document.querySelectorAll('.form-check-input');
+        checkboxes.forEach(checkbox => {
+            // Only bind to checkboxes that aren't already checked
+            if (!checkbox.checked && !checkbox.disabled) {
+                // For mobile - handle both tap and click
+                checkbox.addEventListener('change', function() {
+                    const choreId = this.id.replace('chore-', '');
+                    openCompleteModal(choreId);
+                });
+                
+                // Add tap/click handler to the parent label for better mobile experience
+                const parentLabel = checkbox.nextElementSibling;
+                if (parentLabel && parentLabel.classList.contains('chore-name')) {
+                    parentLabel.addEventListener('click', function(e) {
+                        // Prevent default to avoid double triggering
+                        e.preventDefault();
+                        const choreId = e.target.getAttribute('for').replace('chore-', '');
+                        openCompleteModal(choreId);
+                    });
+                }
+            }
+        });
+        
+        // Function to open the completion modal
+        function openCompleteModal(choreId) {
+            modalChoreIdInput.value = choreId;
+            completionDateField.value = formattedDate;
+            
+            // Open the modal programmatically
+            const completeModal = new bootstrap.Modal(document.getElementById('completeChoreModal'));
+            completeModal.show();
+        }
+        
         // Handle edit chore button clicks
         const editButtons = document.querySelectorAll('.edit-chore-btn');
         const editChoreIdInput = document.getElementById('edit-chore-id');
@@ -222,13 +256,15 @@
         const isSharedCheckbox = document.getElementById('is_shared');
         const sharingOptions = document.getElementById('sharingOptions');
         
-        isSharedCheckbox.addEventListener('change', function() {
-            if (this.checked) {
-                sharingOptions.classList.remove('d-none');
-            } else {
-                sharingOptions.classList.add('d-none');
-            }
-        });
+        if (isSharedCheckbox && sharingOptions) {
+            isSharedCheckbox.addEventListener('change', function() {
+                if (this.checked) {
+                    sharingOptions.classList.remove('d-none');
+                } else {
+                    sharingOptions.classList.add('d-none');
+                }
+            });
+        }
         
         // Search functionality
         const searchInput = document.getElementById('choreSearchInput');
