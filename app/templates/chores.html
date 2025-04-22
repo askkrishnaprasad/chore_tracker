@@ -18,6 +18,21 @@
         font-size: 0.8rem;
         color: #6c757d;
     }
+    /* Styles for the quick complete form */
+    .quick-complete-form {
+        display: none;
+        padding: 15px;
+        margin-top: 10px;
+        background-color: #f8f9fc;
+        border-radius: 8px;
+        border: 1px solid #e3e6f0;
+    }
+    .quick-complete-form.active {
+        display: block;
+    }
+    .form-toggle {
+        width: 100%;
+    }
 </style>
 
 <div class="row mb-4">
@@ -70,7 +85,7 @@
                         </button>
                         
                         {% if chore.id not in completed_chore_ids %}
-                        <button class="btn btn-sm btn-outline-primary me-2 complete-chore-btn" data-chore-id="{{ chore.id }}" data-bs-toggle="modal" data-bs-target="#completeChoreModal">
+                        <button class="btn btn-sm btn-outline-primary me-2 form-toggle" data-chore-id="{{ chore.id }}">
                             Complete
                         </button>
                         {% else %}
@@ -78,6 +93,65 @@
                         {% endif %}
                     </div>
                 </div>
+
+                {% if chore.id not in completed_chore_ids %}
+                <!-- Direct form for each chore instead of modal -->
+                <div id="quick-form-{{ chore.id }}" class="quick-complete-form">
+                    <form method="POST" action="{{ url_for('complete_chore') }}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <input type="hidden" name="chore_id" value="{{ chore.id }}">
+                        <input type="hidden" name="user_id" value="{{ current_user.id }}">
+                        
+                        <div class="row">
+                            <div class="col-12 mb-3">
+                                <label class="form-label fw-bold">When did you complete this?</label>
+                                <input type="date" class="form-select form-select-lg" name="completion_date" value="{{ today.strftime('%Y-%m-%d') }}" max="{{ today.strftime('%Y-%m-%d') }}" style="height: auto; padding: 0.5rem 1rem;" required>
+                                <div class="form-text">Select the date you completed this chore</div>
+                            </div>
+                            
+                            <div class="col-12 mb-3">
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input share-toggle" type="checkbox" name="is_shared" id="is_shared-{{ chore.id }}" style="width: 3em; height: 1.5em;">
+                                    <label class="form-check-label fw-bold" for="is_shared-{{ chore.id }}">
+                                        Share with another user
+                                    </label>
+                                </div>
+                            </div>
+                            
+                            <div class="col-12 share-options-{{ chore.id }} d-none">
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">Your contribution:</label>
+                                    <div class="percentage-container d-flex align-items-center">
+                                        <input type="range" class="form-range flex-grow-1 me-2" id="percentage-range-{{ chore.id }}" min="1" max="99" value="50">
+                                        <div class="input-group" style="width: 120px; flex-shrink: 0;">
+                                            <input type="number" class="form-control percentage-display" name="percentage" id="percentage-value-{{ chore.id }}" min="1" max="99" value="50">
+                                            <span class="input-group-text percentage-symbol">%</span>
+                                        </div>
+                                    </div>
+                                    <div class="form-text">The remaining percentage will be credited to the other user.</div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">Share with:</label>
+                                    <select class="form-select" name="other_user_id">
+                                        {% for user in home_users if user.id != current_user.id %}
+                                            <option value="{{ user.id }}">{{ user.username }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <div class="col-12">
+                                <div class="d-flex justify-content-between">
+                                    <button type="submit" class="btn btn-primary">Complete Chore</button>
+                                    <button type="button" class="btn btn-outline-secondary form-close" data-chore-id="{{ chore.id }}">Cancel</button>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                {% endif %}
+                
                 {% endfor %}
             </div>
         {% else %}
@@ -87,64 +161,6 @@
                 <a href="{{ url_for('add_chore') }}" class="btn btn-primary btn-sm">Add Your First Chore</a>
             </div>
         {% endif %}
-    </div>
-</div>
-
-<!-- Complete Chore Modal -->
-<div class="modal fade" id="completeChoreModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header bg-primary-gradient text-white">
-                <h5 class="modal-title">Complete Chore</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <form method="POST" action="{{ url_for('complete_chore') }}">
-                <div class="modal-body">
-                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                    <input type="hidden" name="chore_id" id="modal-chore-id">
-                    <input type="hidden" name="user_id" value="{{ current_user.id }}">
-                    
-                    <div class="mb-3">
-                        <label for="completion_date" class="form-label">Completion Date</label>
-                        <input type="date" class="form-control" name="completion_date" id="completion_date" value="{{ today.strftime('%Y-%m-%d') }}" max="{{ today.strftime('%Y-%m-%d') }}" required>
-                        <div class="form-text">You can backdate chore completions for dates you might have missed.</div>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" name="is_shared" id="is_shared">
-                            <label class="form-check-label" for="is_shared">
-                                Share this chore with another user
-                            </label>
-                        </div>
-                    </div>
-                    
-                    <div id="sharingOptions" class="d-none">
-                        <div class="mb-3">
-                            <label for="percentage" class="form-label">Your contribution percentage:</label>
-                            <div class="input-group">
-                                <input type="number" class="form-control" name="percentage" id="percentage" min="1" max="99" value="50">
-                                <span class="input-group-text">%</span>
-                            </div>
-                            <div class="form-text">The remaining percentage will be credited to the other user.</div>
-                        </div>
-                        
-                        <div class="mb-3">
-                            <label for="other_user_id" class="form-label">Share with:</label>
-                            <select class="form-select" name="other_user_id" id="other_user_id">
-                                {% for user in home_users if user.id != current_user.id %}
-                                    <option value="{{ user.id }}">{{ user.username }}</option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-primary">Complete Chore</button>
-                </div>
-            </form>
-        </div>
     </div>
 </div>
 
@@ -179,65 +195,6 @@
 {% block scripts %}
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // Get the current date in the correct format for the date input
-        const today = new Date();
-        const year = today.getFullYear();
-        const month = String(today.getMonth() + 1).padStart(2, '0');
-        const day = String(today.getDate()).padStart(2, '0');
-        const formattedDate = `${year}-${month}-${day}`;
-        
-        // Initialize date field to today with the correct format
-        const completionDateField = document.getElementById('completion_date');
-        completionDateField.value = formattedDate;
-        
-        // Handle complete chore button clicks
-        const completeButtons = document.querySelectorAll('.complete-chore-btn');
-        const modalChoreIdInput = document.getElementById('modal-chore-id');
-        
-        completeButtons.forEach(button => {
-            button.addEventListener('click', function() {
-                const choreId = this.getAttribute('data-chore-id');
-                modalChoreIdInput.value = choreId;
-                
-                // Reset date to today with the correct format
-                completionDateField.value = formattedDate;
-            });
-        });
-        
-        // Handle checkbox interactions for mobile and desktop
-        const checkboxes = document.querySelectorAll('.form-check-input');
-        checkboxes.forEach(checkbox => {
-            // Only bind to checkboxes that aren't already checked
-            if (!checkbox.checked && !checkbox.disabled) {
-                // For mobile - handle both tap and click
-                checkbox.addEventListener('change', function() {
-                    const choreId = this.id.replace('chore-', '');
-                    openCompleteModal(choreId);
-                });
-                
-                // Add tap/click handler to the parent label for better mobile experience
-                const parentLabel = checkbox.nextElementSibling;
-                if (parentLabel && parentLabel.classList.contains('chore-name')) {
-                    parentLabel.addEventListener('click', function(e) {
-                        // Prevent default to avoid double triggering
-                        e.preventDefault();
-                        const choreId = e.target.getAttribute('for').replace('chore-', '');
-                        openCompleteModal(choreId);
-                    });
-                }
-            }
-        });
-        
-        // Function to open the completion modal
-        function openCompleteModal(choreId) {
-            modalChoreIdInput.value = choreId;
-            completionDateField.value = formattedDate;
-            
-            // Open the modal programmatically
-            const completeModal = new bootstrap.Modal(document.getElementById('completeChoreModal'));
-            completeModal.show();
-        }
-        
         // Handle edit chore button clicks
         const editButtons = document.querySelectorAll('.edit-chore-btn');
         const editChoreIdInput = document.getElementById('edit-chore-id');
@@ -252,18 +209,71 @@
             });
         });
         
-        // Handle sharing toggle
-        const isSharedCheckbox = document.getElementById('is_shared');
-        const sharingOptions = document.getElementById('sharingOptions');
+        // Handle complete form toggle
+        const formToggleButtons = document.querySelectorAll('.form-toggle');
+        formToggleButtons.forEach(button => {
+            button.addEventListener('click', function(e) {
+                e.preventDefault();
+                const choreId = this.getAttribute('data-chore-id');
+                const form = document.getElementById('quick-form-' + choreId);
+                form.classList.add('active');
+                this.style.display = 'none';
+            });
+        });
         
-        if (isSharedCheckbox && sharingOptions) {
-            isSharedCheckbox.addEventListener('change', function() {
+        // Handle form close buttons
+        const formCloseButtons = document.querySelectorAll('.form-close');
+        formCloseButtons.forEach(button => {
+            button.addEventListener('click', function(e) {
+                e.preventDefault();
+                const choreId = this.getAttribute('data-chore-id');
+                const form = document.getElementById('quick-form-' + choreId);
+                form.classList.remove('active');
+                const toggleButton = document.querySelector('.form-toggle[data-chore-id="' + choreId + '"]');
+                toggleButton.style.display = '';
+            });
+        });
+        
+        // Handle sharing toggles
+        const shareToggles = document.querySelectorAll('.share-toggle');
+        shareToggles.forEach(toggle => {
+            toggle.addEventListener('change', function() {
+                const choreId = this.id.split('-')[1];
+                const shareOptions = document.querySelector('.share-options-' + choreId);
                 if (this.checked) {
-                    sharingOptions.classList.remove('d-none');
+                    shareOptions.classList.remove('d-none');
+                    // Initialize the sync between range and number inputs
+                    setupPercentageSync(choreId);
                 } else {
-                    sharingOptions.classList.add('d-none');
+                    shareOptions.classList.add('d-none');
                 }
             });
+        });
+        
+        // Function to set up percentage sync for a specific chore
+        function setupPercentageSync(choreId) {
+            const rangeInput = document.getElementById('percentage-range-' + choreId);
+            const numberInput = document.getElementById('percentage-value-' + choreId);
+            
+            if (rangeInput && numberInput) {
+                // Sync range to number
+                rangeInput.addEventListener('input', function() {
+                    numberInput.value = this.value;
+                });
+                
+                // Sync number to range
+                numberInput.addEventListener('input', function() {
+                    // Ensure value is within bounds
+                    let value = parseInt(this.value, 10);
+                    if (isNaN(value)) value = 50;
+                    if (value < 1) value = 1;
+                    if (value > 99) value = 99;
+                    
+                    // Update both inputs with validated value
+                    this.value = value;
+                    rangeInput.value = value;
+                });
+            }
         }
         
         // Search functionality

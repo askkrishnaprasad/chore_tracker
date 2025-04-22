@@ -410,11 +410,15 @@ def register_routes(app):
         ).all()
         completed_chore_ids = [c.chore_id for c in completed_chores]
         
+        # Import datetime module for the template
+        import datetime
+        
         return render_template('chores.html', 
                               chores=chores, 
                               home_users=home_users,
                               completed_chore_ids=completed_chore_ids,
-                              today=today)
+                              today=today,
+                              datetime=datetime)
     
     @app.route('/add_chore', methods=['GET', 'POST'])
     @login_required
