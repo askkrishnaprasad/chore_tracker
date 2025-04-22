@@ -1717,4 +1717,88 @@ def register_routes(app):
                               monthly_active_users=monthly_active_users,
                               action_counts=action_counts,
                               daily_activity=daily_activity,
-                              top_users=top_users_data) 
+                              top_users=top_users_data)
+    
+    @app.route('/delete_chore_completion', methods=['POST'])
+    @login_required
+    def delete_chore_completion():
+        if not current_user.home_id:
+            flash('You need to be assigned to a home before you can manage completions.', 'warning')
+            return redirect(url_for('dashboard'))
+        
+        completion_id = request.form.get('completion_id')
+        if not completion_id:
+            flash('Invalid request. No completion specified.', 'danger')
+            return redirect(url_for('chore_history'))
+        
+        # Get the completion
+        completion = ChoreCompletion.query.get_or_404(completion_id)
+        
+        # Security checks
+        # 1. Ensure user can only delete their own completions
+        if completion.user_id != current_user.id:
+            flash('You can only delete your own chore completions.', 'danger')
+            return redirect(url_for('chore_history'))
+        
+        # 2. Ensure the chore is from the user's home
+        chore = Chore.query.get(completion.chore_id)
+        if not chore or chore.home_id != current_user.home_id:
+            flash('You can only delete completions for chores in your own home.', 'danger')
+            return redirect(url_for('chore_history'))
+        
+        # 3. Only active completions can be deleted (not challenged or adjusted)
+        if completion.status != 'active':
+            flash('You cannot delete completions that have been challenged or adjusted.', 'danger')
+            return redirect(url_for('chore_history'))
+        
+        # Get completion details for tracking
+        chore_name = chore.name
+        completion_date = completion.date
+        completion_percentage = completion.percentage
+        
+        # Check if this completion has any challenges
+        if completion.challenges:
+            # Delete all challenges for this completion
+            for challenge in completion.challenges:
+                db.session.delete(challenge)
+        
+        # Check if this is part of a shared chore with other users
+        other_completions = ChoreCompletion.query.filter(
+            ChoreCompletion.chore_id == completion.chore_id,
+            ChoreCompletion.date == completion.date,
+            ChoreCompletion.id != completion.id
+        ).all()
+        
+        # Delete the completion
+        db.session.delete(completion)
+        
+        # Track activity
+        track_activity(current_user.id, 'delete_chore_completion', 'chore_history', {
+            'chore_id': chore.id,
+            'chore_name': chore_name,
+            'date': completion_date.strftime('%Y-%m-%d'),
+            'percentage': completion_percentage
+        })
+        
+        db.session.commit()
+        
+        # Check for any completed assignments that need to be reopened
+        # Only assignments where the current user was the assignee
+        assignments = ChoreAssignment.query.filter_by(
+            assignee_id=current_user.id,
+            chore_id=chore.id,
+            status='completed',
+            due_date=completion_date
+        ).all()
+        
+        if assignments:
+            for assignment in assignments:
+                assignment.status = 'pending'
+            db.session.commit()
+            if len(assignments) == 1:
+                flash('A previously completed assignment has been reopened.', 'info')
+            else:
+                flash(f'{len(assignments)} previously completed assignments have been reopened.', 'info')
+        
+        flash(f'Chore completion for "{chore_name}" on {completion_date.strftime("%b %d, %Y")} has been deleted.', 'success')
+        return redirect(url_for('chore_history')) 

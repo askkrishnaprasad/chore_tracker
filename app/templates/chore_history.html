@@ -97,6 +97,14 @@
                                         data-challenger="{{ completion.challenges[0].challenger.username }}">
                                     Defend
                                 </button>
+                                {% elif completion.status == 'active' and completion.user.id == current_user.id %}
+                                <form method="POST" action="{{ url_for('delete_chore_completion') }}" class="d-inline" onsubmit="return confirm('Are you sure you want to delete this completion? This will remove any points earned.');">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <input type="hidden" name="completion_id" value="{{ completion.id }}">
+                                    <button type="submit" class="btn btn-sm btn-danger">
+                                        <i class="fas fa-trash me-1"></i>Delete
+                                    </button>
+                                </form>
                                 {% else %}
                                 -
                                 {% endif %}
