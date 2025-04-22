@@ -65,6 +65,19 @@
                     </div>
                     
                     <div class="mb-3">
+                        <label for="due_time" class="form-label">Due Time</label>
+                        {{ form.due_time(class="form-control" + (" is-invalid" if form.due_time.errors else ""), id="due_time", type="time") }}
+                        {% if form.due_time.errors %}
+                            <div class="invalid-feedback">
+                                {% for error in form.due_time.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                        <div class="form-text">Set a specific time for the calendar event (uses 24-hour format)</div>
+                    </div>
+                    
+                    <div class="mb-3">
                         <label for="points" class="form-label">Points</label>
                         {{ form.points(class="form-control" + (" is-invalid" if form.points.errors else ""), id="points", placeholder="1.0") }}
                         {% if form.points.errors %}

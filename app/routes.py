@@ -5,7 +5,7 @@ from app.models import User, Home, Chore, ChoreCompletion, ChoreAssignment, User
 from app.forms import (LoginForm, RegistrationForm, HomeForm, ChoreForm, 
                    ChoreCompletionForm, ChoreAssignmentForm, UserForm)
 from app import db, login_manager
-from datetime import datetime, date, timedelta
+from datetime import date, datetime, timedelta, time
 from sqlalchemy import func, and_
 import json
 from app.google_calendar import get_authorization_url, process_oauth_callback, save_tokens, add_calendar_event
@@ -893,13 +893,29 @@ def register_routes(app):
             chore = Chore.query.get(form.chore_id.data)
             assignee = User.query.get(form.assignee_id.data)
             
+            # Parse time if provided
+            due_time = None
+            if form.due_time.data:
+                try:
+                    hours, minutes = form.due_time.data.split(':')
+                    due_time = time(int(hours), int(minutes))
+                except (ValueError, AttributeError):
+                    # Default to 10:00 AM if time parsing fails
+                    due_time = time(10, 0)
+            else:
+                # Default to 10:00 AM if no time provided
+                due_time = time(10, 0)
+            
+            # Create datetime by combining date and time
+            due_datetime = datetime.combine(form.due_date.data, due_time)
+            
             # Check if calendar integration is requested and the assignee has connected their Google Calendar
             if form.add_to_calendar.data and assignee and UserCalendarToken.query.filter_by(user_id=assignee.id).first():
-                # Add to their Google Calendar
+                # Add to their Google Calendar with the specific time
                 success, message = add_calendar_event(
                     user_id=assignee.id,
                     chore_name=chore.name,
-                    due_date=form.due_date.data,
+                    due_date=due_datetime,  # Pass the datetime object instead of just the date
                     notes=form.notes.data
                 )
                 
@@ -1411,9 +1427,6 @@ def register_routes(app):
     @app.route('/calendar/oauth2callback')
     @login_required
     def calendar_oauth_callback():
-        # Debug: log callback invocation and parameters
-        app.logger.info("OAuth callback received!")
-        app.logger.info(f"Callback args: {request.args}")
         # Get authorization code
         code = request.args.get('code')
         state = request.args.get('state')

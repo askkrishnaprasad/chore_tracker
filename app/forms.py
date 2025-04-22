@@ -36,6 +36,7 @@ class ChoreAssignmentForm(FlaskForm):
     chore_id = SelectField('Chore', coerce=int, validators=[DataRequired()])
     assignee_id = SelectField('Assign To', coerce=int, validators=[DataRequired()])
     due_date = DateField('Due Date', validators=[DataRequired()], default=date.today)
+    due_time = StringField('Due Time', validators=[Optional()], default="10:00")
     points = FloatField('Points', validators=[DataRequired()], default=1.0)
     notes = TextAreaField('Notes', validators=[Optional()])
     add_to_calendar = BooleanField('Add to Google Calendar', default=True)
