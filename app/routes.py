@@ -12,6 +12,7 @@ from app.google_calendar import get_authorization_url, process_oauth_callback, s
 import io
 import os
 import xlsxwriter
+import pytz
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -906,8 +907,10 @@ def register_routes(app):
                 # Default to 10:00 AM if no time provided
                 due_time = time(10, 0)
             
-            # Create datetime by combining date and time
+            # Create datetime by combining date and time with local timezone
+            local_tz = pytz.timezone('America/Los_Angeles')  # Using Pacific Time - adjust to your local timezone
             due_datetime = datetime.combine(form.due_date.data, due_time)
+            due_datetime = local_tz.localize(due_datetime)
             
             # Check if calendar integration is requested and the assignee has connected their Google Calendar
             if form.add_to_calendar.data and assignee and UserCalendarToken.query.filter_by(user_id=assignee.id).first():

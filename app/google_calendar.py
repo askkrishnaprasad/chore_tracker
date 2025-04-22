@@ -133,17 +133,20 @@ def add_calendar_event(user_id, chore_name, due_date, notes=None, duration_hours
         start_time = due_datetime.isoformat()
         end_time = end_datetime.isoformat()
         
+        # Get timezone from the due_datetime or default to UTC
+        timezone = due_datetime.tzinfo.zone if due_datetime.tzinfo else 'UTC'
+        
         # Create event details
         event = {
             'summary': f'Chore: {chore_name}',
             'description': notes or 'Assigned chore from Chore Tracker',
             'start': {
                 'dateTime': start_time,
-                'timeZone': 'UTC',
+                'timeZone': timezone,
             },
             'end': {
                 'dateTime': end_time,
-                'timeZone': 'UTC',
+                'timeZone': timezone,
             },
             'reminders': {
                 'useDefault': True,
