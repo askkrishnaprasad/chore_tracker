@@ -1411,6 +1411,9 @@ def register_routes(app):
     @app.route('/calendar/oauth2callback')
     @login_required
     def calendar_oauth_callback():
+        # Debug: log callback invocation and parameters
+        app.logger.info("OAuth callback received!")
+        app.logger.info(f"Callback args: {request.args}")
         # Get authorization code
         code = request.args.get('code')
         state = request.args.get('state')
