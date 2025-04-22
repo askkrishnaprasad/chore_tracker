@@ -908,7 +908,7 @@ def register_routes(app):
                 due_time = time(10, 0)
             
             # Create datetime by combining date and time with local timezone
-            local_tz = pytz.timezone('America/Los_Angeles')  # Using Pacific Time - adjust to your local timezone
+            local_tz = pytz.timezone('America/New_York')  # Eastern Time Zone
             due_datetime = datetime.combine(form.due_date.data, due_time)
             due_datetime = local_tz.localize(due_datetime)
             
