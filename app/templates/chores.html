@@ -266,6 +266,16 @@
                 const form = document.getElementById('quick-form-' + choreId);
                 form.classList.add('active');
                 this.style.display = 'none';
+                
+                // Ensure the date input in this form has the correct max value and validation
+                const dateInput = form.querySelector('input[name="completion_date"]');
+                if (dateInput) {
+                    dateInput.setAttribute('max', todayFormatted);
+                    // Make sure the selected date is not in the future
+                    if (dateInput.value > todayFormatted) {
+                        dateInput.value = todayFormatted;
+                    }
+                }
             });
         });
         
@@ -342,9 +352,35 @@
         const todayFormatted = today.toISOString().split('T')[0]; // Format as YYYY-MM-DD
         dateFilter.setAttribute('max', todayFormatted);
         
+        // Add additional event listener to enforce max date on mobile browsers
+        dateFilter.addEventListener('change', function() {
+            // If selected date is after today, reset to today
+            if (this.value > todayFormatted) {
+                this.value = todayFormatted;
+                alert("Future dates are not allowed. Date has been reset to today.");
+            }
+        });
+        
+        // Apply the same validation to all completion date inputs
+        document.querySelectorAll('input[name="completion_date"]').forEach(input => {
+            input.addEventListener('change', function() {
+                if (this.value > todayFormatted) {
+                    this.value = todayFormatted;
+                    alert("Future dates are not allowed. Date has been reset to today.");
+                }
+            });
+        });
+        
         dateFilterButton.addEventListener('click', function() {
             // Get the selected date
             const selectedDate = dateFilter.value;
+            
+            // Validate the selected date is not in the future
+            if (selectedDate > todayFormatted) {
+                dateFilter.value = todayFormatted;
+                alert("Future dates are not allowed. Date has been reset to today.");
+                return;
+            }
             
             // Update all completion date inputs to match the selected date
             document.querySelectorAll('input[name="completion_date"]').forEach(input => {
