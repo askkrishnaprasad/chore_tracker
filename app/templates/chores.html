@@ -44,6 +44,7 @@
     .form-toggle {
         width: 100%;
     }
+    /* Remove search highlight class */
 </style>
 
 <div class="row mb-4">
@@ -96,7 +97,7 @@
         {% if chores %}
             <div class="p-3" id="chore-list-container">
                 {% for chore in chores %}
-                <div class="chore-list-item d-flex align-items-center {% if chore.id in completed_chore_ids %}completed{% endif %}" data-chore-id="{{ chore.id }}">
+                <div class="chore-list-item d-flex align-items-center p-2 {% if chore.id in completed_chore_ids %}completed{% endif %}" data-chore-id="{{ chore.id }}">
                     <div class="form-check flex-grow-1">
                         <input class="form-check-input" type="checkbox" id="chore-{{ chore.id }}" 
                                {% if chore.id in completed_chore_ids %}checked disabled{% endif %}>
@@ -366,7 +367,7 @@
         
         // Apply both search and date filter
         function filterChores() {
-            const query = searchInput.value.toLowerCase();
+            const query = searchInput.value.toLowerCase().trim();
             let matchCount = 0;
             
             // Add 'focused' class when search has content
@@ -376,38 +377,68 @@
                 searchInput.classList.remove('is-focused');
             }
             
-            choreItems.forEach(item => {
-                const choreName = item.querySelector('.chore-name').textContent.toLowerCase();
-                if (choreName.includes(query)) {
+            // First, reset all visibility
+            document.querySelectorAll('.quick-complete-form').forEach(form => {
+                form.classList.remove('active');
+            });
+            
+            // Show all items if no search query
+            if (query.length === 0) {
+                choreItems.forEach(item => {
                     item.style.display = '';
-                    matchCount++;
-                } else {
-                    item.style.display = 'none';
-                }
+                });
+                searchResultsCount.textContent = '';
                 
-                // Make sure any open forms stay with their parent items
+                // Reset form toggles to visible
+                document.querySelectorAll('.edit-toggle, .form-toggle').forEach(btn => {
+                    btn.style.display = '';
+                });
+                
+                // Remove any "no results" message
+                const noResultsMsg = document.getElementById('no-search-results');
+                if (noResultsMsg) {
+                    noResultsMsg.remove();
+                }
+                return;
+            }
+            
+            // When we have a search query, hide all items first
+            choreItems.forEach(item => {
+                item.style.display = 'none';
+                
+                // Also hide all forms associated with this item
                 const choreId = item.getAttribute('data-chore-id');
                 const editForm = document.getElementById('edit-form-' + choreId);
                 const completeForm = document.getElementById('quick-form-' + choreId);
                 
-                if (editForm) {
-                    editForm.style.display = item.style.display;
-                }
-                if (completeForm) {
-                    completeForm.style.display = item.style.display;
+                if (editForm) editForm.style.display = 'none';
+                if (completeForm) completeForm.style.display = 'none';
+            });
+            
+            // Then only show matching items
+            choreItems.forEach(item => {
+                const choreName = item.querySelector('.chore-name').textContent.toLowerCase();
+                const choreId = item.getAttribute('data-chore-id');
+                
+                if (choreName.includes(query)) {
+                    item.style.display = '';
+                    matchCount++;
+                    
+                    // Show forms containers (but keep them inactive)
+                    const editForm = document.getElementById('edit-form-' + choreId);
+                    const completeForm = document.getElementById('quick-form-' + choreId);
+                    
+                    if (editForm) editForm.style.display = '';
+                    if (completeForm) completeForm.style.display = '';
                 }
             });
             
             // Update search results count
-            if (query.length > 0) {
-                searchResultsCount.textContent = `${matchCount} matches`;
-            } else {
-                searchResultsCount.textContent = '';
-            }
+            searchResultsCount.textContent = `${matchCount} matches`;
             
             // Show/hide "no results" message
             const noResultsMsg = document.getElementById('no-search-results');
-            if (matchCount === 0 && query.length > 0) {
+            if (matchCount === 0) {
                 if (!noResultsMsg) {
                     const msg = document.createElement('div');
                     msg.id = 'no-search-results';
