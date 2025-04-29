@@ -39,12 +39,18 @@
         border: 1px solid #e3e6f0;
     }
     .quick-complete-form.active {
-        display: block;
+        display: block !important; /* Override search-hidden */
     }
     .form-toggle {
         width: 100%;
     }
-    /* Remove search highlight class */
+    /* Search visibility classes */
+    .search-hidden {
+        display: none !important;
+    }
+    .search-visible {
+        display: flex !important;
+    }
 </style>
 
 <div class="row mb-4">
@@ -370,71 +376,64 @@
             const query = searchInput.value.toLowerCase().trim();
             let matchCount = 0;
             
-            // Add 'focused' class when search has content
-            if (query.length > 0) {
+            // Add focus styling based on search content
+            if (query !== '') {
                 searchInput.classList.add('is-focused');
             } else {
                 searchInput.classList.remove('is-focused');
             }
             
-            // First, reset all visibility
-            document.querySelectorAll('.quick-complete-form').forEach(form => {
+            // Close any open forms first
+            document.querySelectorAll('.quick-complete-form.active').forEach(form => {
                 form.classList.remove('active');
             });
             
-            // Show all items if no search query
-            if (query.length === 0) {
+            // Show all items if no search
+            if (query === '') {
+                // Remove any search classes from all chore items
                 choreItems.forEach(item => {
-                    item.style.display = '';
+                    item.classList.remove('search-hidden');
+                    item.classList.remove('search-visible');
                 });
+                
+                // Remove any search results count and no-results message
                 searchResultsCount.textContent = '';
-                
-                // Reset form toggles to visible
-                document.querySelectorAll('.edit-toggle, .form-toggle').forEach(btn => {
-                    btn.style.display = '';
-                });
-                
-                // Remove any "no results" message
                 const noResultsMsg = document.getElementById('no-search-results');
-                if (noResultsMsg) {
-                    noResultsMsg.remove();
-                }
+                if (noResultsMsg) noResultsMsg.remove();
+                
                 return;
             }
             
-            // When we have a search query, hide all items first
+            // Apply search filter
+            // First hide all items
             choreItems.forEach(item => {
-                item.style.display = 'none';
+                item.classList.add('search-hidden');
+                item.classList.remove('search-visible');
                 
-                // Also hide all forms associated with this item
+                // Also hide related forms
                 const choreId = item.getAttribute('data-chore-id');
                 const editForm = document.getElementById('edit-form-' + choreId);
                 const completeForm = document.getElementById('quick-form-' + choreId);
                 
-                if (editForm) editForm.style.display = 'none';
-                if (completeForm) completeForm.style.display = 'none';
+                if (editForm) editForm.classList.add('search-hidden');
+                if (completeForm) completeForm.classList.add('search-hidden');
             });
             
-            // Then only show matching items
+            // Then show only matching items
             choreItems.forEach(item => {
-                const choreName = item.querySelector('.chore-name').textContent.toLowerCase();
+                const choreName = item.querySelector('.chore-name').textContent.toLowerCase().trim();
                 const choreId = item.getAttribute('data-chore-id');
                 
                 if (choreName.includes(query)) {
-                    item.style.display = '';
+                    // Show this item
+                    item.classList.remove('search-hidden');
+                    item.classList.add('search-visible');
                     matchCount++;
-                    
-                    // Show forms containers (but keep them inactive)
-                    const editForm = document.getElementById('edit-form-' + choreId);
-                    const completeForm = document.getElementById('quick-form-' + choreId);
-                    
-                    if (editForm) editForm.style.display = '';
-                    if (completeForm) completeForm.style.display = '';
                 }
             });
             
             // Update search results count
-            searchResultsCount.textContent = `${matchCount} matches`;
+            searchResultsCount.textContent = `${matchCount} match${matchCount !== 1 ? 'es' : ''}`;
             
             // Show/hide "no results" message
             const noResultsMsg = document.getElementById('no-search-results');
