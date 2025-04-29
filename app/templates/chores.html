@@ -86,13 +86,14 @@
                     <input type="date" class="form-control" id="completionDateFilter" value="{{ today.strftime('%Y-%m-%d') }}" max="{{ today.strftime('%Y-%m-%d') }}">
                 </div>
             </div>
-            <div class="col-md-2 d-flex align-items-end">
+            <div class="col-md-2">
+                <h6 class="text-muted mb-2">&nbsp;</h6>
                 <button id="dateFilterButton" class="btn btn-primary w-100">
                     <i class="fas fa-filter me-2"></i>Filter
                 </button>
             </div>
         </div>
-        <div id="active-date-display" class="mt-3 d-none alert alert-light border">
+        <div id="active-date-display" class="mt-3 alert alert-info border">
             <i class="fas fa-calendar-check me-2"></i>
             <span id="active-date-text">Showing chores for: <strong>Today</strong></span>
         </div>
@@ -231,6 +232,16 @@
 {% block scripts %}
 <script>
     document.addEventListener('DOMContentLoaded', function() {
+        // Initialize date display for today
+        const today = new Date();
+        const formattedToday = today.toLocaleDateString('en-US', { 
+            weekday: 'long', 
+            year: 'numeric', 
+            month: 'long', 
+            day: 'numeric' 
+        });
+        document.getElementById('active-date-text').innerHTML = `Showing chores for: <strong>${formattedToday}</strong>`;
+        
         // Handle edit form toggle
         const editToggleButtons = document.querySelectorAll('.edit-toggle');
         editToggleButtons.forEach(button => {
@@ -365,7 +376,6 @@
             const activeDateText = document.getElementById('active-date-text');
             
             activeDateText.innerHTML = `Showing chores for: <strong>${formattedDate}</strong>`;
-            activeDisplay.classList.remove('d-none');
             
             // Check if this is today's date
             const today = new Date();
