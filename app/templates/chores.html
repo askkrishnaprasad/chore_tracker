@@ -80,7 +80,7 @@
                     </div>
                     
                     <div class="d-flex align-items-center">
-                        <button class="btn btn-sm btn-outline-secondary me-2 edit-chore-btn" data-chore-id="{{ chore.id }}" data-chore-name="{{ chore.name }}" data-bs-toggle="modal" data-bs-target="#editChoreModal">
+                        <button class="btn btn-sm btn-outline-secondary me-2 edit-toggle" data-chore-id="{{ chore.id }}" data-chore-name="{{ chore.name }}">
                             <i class="fas fa-edit"></i>
                         </button>
                         
@@ -92,6 +92,28 @@
                         <span class="badge bg-success me-2 d-inline-block" style="padding: 0.25rem 0.5rem; font-size: 0.875rem; line-height: 1.5;">Completed Today</span>
                         {% endif %}
                     </div>
+                </div>
+
+                <!-- Edit form for this chore -->
+                <div id="edit-form-{{ chore.id }}" class="quick-complete-form">
+                    <form method="POST" action="{{ url_for('edit_chore') }}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <input type="hidden" name="chore_id" value="{{ chore.id }}">
+                        
+                        <div class="row">
+                            <div class="col-12 mb-3">
+                                <label class="form-label fw-bold">Edit Chore Name</label>
+                                <input type="text" class="form-control" name="name" value="{{ chore.name }}" required>
+                            </div>
+                            
+                            <div class="col-12">
+                                <div class="d-flex justify-content-between">
+                                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                                    <button type="button" class="btn btn-outline-secondary edit-close" data-chore-id="{{ chore.id }}">Cancel</button>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
                 </div>
 
                 {% if chore.id not in completed_chore_ids %}
@@ -164,48 +186,35 @@
     </div>
 </div>
 
-<!-- Edit Chore Modal -->
-<div class="modal fade" id="editChoreModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header bg-secondary text-white">
-                <h5 class="modal-title">Edit Chore</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <form method="POST" action="{{ url_for('edit_chore') }}">
-                <div class="modal-body">
-                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                    <input type="hidden" name="chore_id" id="edit-chore-id">
-                    
-                    <div class="mb-3">
-                        <label for="edit-chore-name" class="form-label">Chore Name</label>
-                        <input type="text" class="form-control" name="name" id="edit-chore-name" required>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-primary">Save Changes</button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
+<!-- Edit Chore Modal has been replaced with inline forms -->
+
 {% endblock %}
 
 {% block scripts %}
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // Handle edit chore button clicks
-        const editButtons = document.querySelectorAll('.edit-chore-btn');
-        const editChoreIdInput = document.getElementById('edit-chore-id');
-        const editChoreNameInput = document.getElementById('edit-chore-name');
-        
-        editButtons.forEach(button => {
-            button.addEventListener('click', function() {
+        // Handle edit form toggle
+        const editToggleButtons = document.querySelectorAll('.edit-toggle');
+        editToggleButtons.forEach(button => {
+            button.addEventListener('click', function(e) {
+                e.preventDefault();
                 const choreId = this.getAttribute('data-chore-id');
-                const choreName = this.getAttribute('data-chore-name');
-                editChoreIdInput.value = choreId;
-                editChoreNameInput.value = choreName;
+                const form = document.getElementById('edit-form-' + choreId);
+                form.classList.add('active');
+                this.style.display = 'none';
+            });
+        });
+        
+        // Handle edit form close buttons
+        const editCloseButtons = document.querySelectorAll('.edit-close');
+        editCloseButtons.forEach(button => {
+            button.addEventListener('click', function(e) {
+                e.preventDefault();
+                const choreId = this.getAttribute('data-chore-id');
+                const form = document.getElementById('edit-form-' + choreId);
+                form.classList.remove('active');
+                const toggleButton = document.querySelector('.edit-toggle[data-chore-id="' + choreId + '"]');
+                toggleButton.style.display = '';
             });
         });
         
