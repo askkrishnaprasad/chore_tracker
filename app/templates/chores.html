@@ -71,8 +71,9 @@
 <!-- Search Bar and Date Filter Row -->
 <div class="card mb-4">
     <div class="card-body">
-        <div class="row g-3 align-items-center">
+        <div class="row g-3">
             <div class="col-md-5">
+                <h6 class="text-muted mb-2">Search Chores</h6>
                 <div class="search-container">
                     <i class="fas fa-search search-icon"></i>
                     <input type="text" class="form-control" id="choreSearchInput" placeholder="Search chores..." autocomplete="off">
@@ -80,16 +81,20 @@
                 </div>
             </div>
             <div class="col-md-5">
-                <div class="date-filter-container d-flex align-items-center">
-                    <i class="fas fa-calendar-day me-2"></i>
+                <h6 class="text-muted mb-2">Date Selection</h6>
+                <div class="date-filter-container">
                     <input type="date" class="form-control" id="completionDateFilter" value="{{ today.strftime('%Y-%m-%d') }}" max="{{ today.strftime('%Y-%m-%d') }}">
                 </div>
             </div>
-            <div class="col-md-2">
+            <div class="col-md-2 d-flex align-items-end">
                 <button id="dateFilterButton" class="btn btn-primary w-100">
                     <i class="fas fa-filter me-2"></i>Filter
                 </button>
             </div>
+        </div>
+        <div id="active-date-display" class="mt-3 d-none alert alert-light border">
+            <i class="fas fa-calendar-check me-2"></i>
+            <span id="active-date-text">Showing chores for: <strong>Today</strong></span>
         </div>
     </div>
 </div>
@@ -346,7 +351,7 @@
                 this.classList.remove('btn-success');
             }, 500);
             
-            // Show notification
+            // Format date for display
             const date = new Date(selectedDate);
             const formattedDate = date.toLocaleDateString('en-US', { 
                 weekday: 'long', 
@@ -355,20 +360,25 @@
                 day: 'numeric' 
             });
             
-            // Use Bootstrap toast or alert for notification
-            const alertBox = document.createElement('div');
-            alertBox.className = 'alert alert-info alert-dismissible fade show position-fixed bottom-0 end-0 m-3';
-            alertBox.setAttribute('role', 'alert');
-            alertBox.innerHTML = `
-                <i class="fas fa-info-circle me-2"></i>Date set to ${formattedDate}
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-            `;
-            document.body.appendChild(alertBox);
+            // Update the active date display
+            const activeDisplay = document.getElementById('active-date-display');
+            const activeDateText = document.getElementById('active-date-text');
             
-            // Remove after 3 seconds
-            setTimeout(() => {
-                alertBox.remove();
-            }, 3000);
+            activeDateText.innerHTML = `Showing chores for: <strong>${formattedDate}</strong>`;
+            activeDisplay.classList.remove('d-none');
+            
+            // Check if this is today's date
+            const today = new Date();
+            const isToday = date.getDate() === today.getDate() && 
+                          date.getMonth() === today.getMonth() && 
+                          date.getFullYear() === today.getFullYear();
+            
+            // Change background based on date
+            if (isToday) {
+                activeDisplay.className = 'mt-3 alert alert-info border';
+            } else {
+                activeDisplay.className = 'mt-3 alert alert-warning border';
+            }
         });
         
         // Apply both search and date filter
