@@ -403,23 +403,43 @@ def register_routes(app):
         chores = Chore.query.filter_by(home_id=current_user.home_id).all()
         home_users = User.query.filter_by(home_id=current_user.home_id).all()
         
-        # Check if user has already completed any chores today
+        # Check for date parameter in request
+        date_param = request.args.get('date')
         today = date.today()
+        
+        if date_param:
+            try:
+                # Parse the date from the parameter (format: YYYY-MM-DD)
+                filter_date = datetime.strptime(date_param, '%Y-%m-%d').date()
+            except ValueError:
+                flash('Invalid date format. Using today\'s date instead.', 'warning')
+                filter_date = today
+        else:
+            filter_date = today
+            
+        # Get completions for the selected date
         completed_chores = ChoreCompletion.query.filter_by(
             user_id=current_user.id, 
-            date=today
+            date=filter_date
         ).all()
         completed_chore_ids = [c.chore_id for c in completed_chores]
         
-        # Import datetime module for the template
-        import datetime
+        # Format the displayed date
+        if filter_date == today:
+            display_date = "Today"
+            date_class = "alert-info"
+        else:
+            # Format the date for display
+            display_date = filter_date.strftime('%A, %B %d, %Y')
+            date_class = "alert-warning"
         
         return render_template('chores.html', 
                               chores=chores, 
                               home_users=home_users,
                               completed_chore_ids=completed_chore_ids,
-                              today=today,
-                              datetime=datetime)
+                              today=filter_date,
+                              display_date=display_date,
+                              date_class=date_class)
     
     @app.route('/add_chore', methods=['GET', 'POST'])
     @login_required

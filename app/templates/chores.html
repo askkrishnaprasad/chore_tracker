@@ -93,9 +93,9 @@
                 </button>
             </div>
         </div>
-        <div id="active-date-display" class="mt-3 alert alert-info border">
+        <div id="active-date-display" class="mt-3 alert {{ date_class }} border">
             <i class="fas fa-calendar-check me-2"></i>
-            <span id="active-date-text">Showing chores for: <strong>Today</strong></span>
+            <span id="active-date-text">Showing chores for: <strong>{{ display_date }}</strong></span>
         </div>
     </div>
 </div>
@@ -232,16 +232,6 @@
 {% block scripts %}
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // Initialize date display for today
-        const today = new Date();
-        const formattedToday = today.toLocaleDateString('en-US', { 
-            weekday: 'long', 
-            year: 'numeric', 
-            month: 'long', 
-            day: 'numeric' 
-        });
-        document.getElementById('active-date-text').innerHTML = `Showing chores for: <strong>${formattedToday}</strong>`;
-        
         // Handle edit form toggle
         const editToggleButtons = document.querySelectorAll('.edit-toggle');
         editToggleButtons.forEach(button => {
@@ -347,48 +337,33 @@
         const dateFilter = document.getElementById('completionDateFilter');
         const dateFilterButton = document.getElementById('dateFilterButton');
         
+        // Always ensure the max date is set to today, even when loading a page with a past date
+        const today = new Date();
+        const todayFormatted = today.toISOString().split('T')[0]; // Format as YYYY-MM-DD
+        dateFilter.setAttribute('max', todayFormatted);
+        
         dateFilterButton.addEventListener('click', function() {
-            // Update all completion date inputs to match the selected date
+            // Get the selected date
             const selectedDate = dateFilter.value;
+            
+            // Update all completion date inputs to match the selected date
             document.querySelectorAll('input[name="completion_date"]').forEach(input => {
                 input.value = selectedDate;
+                // Also ensure these inputs have max set to today
+                input.setAttribute('max', todayFormatted);
             });
             
             // Apply visual indicator that the filter is active
             this.classList.add('btn-success');
             this.classList.remove('btn-primary');
-            setTimeout(() => {
-                this.classList.add('btn-primary');
-                this.classList.remove('btn-success');
-            }, 500);
             
-            // Format date for display
-            const date = new Date(selectedDate);
-            const formattedDate = date.toLocaleDateString('en-US', { 
-                weekday: 'long', 
-                year: 'numeric', 
-                month: 'long', 
-                day: 'numeric' 
-            });
-            
-            // Update the active date display
-            const activeDisplay = document.getElementById('active-date-display');
-            const activeDateText = document.getElementById('active-date-text');
-            
-            activeDateText.innerHTML = `Showing chores for: <strong>${formattedDate}</strong>`;
-            
-            // Check if this is today's date
-            const today = new Date();
-            const isToday = date.getDate() === today.getDate() && 
-                          date.getMonth() === today.getMonth() && 
-                          date.getFullYear() === today.getFullYear();
-            
-            // Change background based on date
-            if (isToday) {
-                activeDisplay.className = 'mt-3 alert alert-info border';
-            } else {
-                activeDisplay.className = 'mt-3 alert alert-warning border';
-            }
+            // Redirect to the same page with the date as a query parameter
+            window.location.href = `${window.location.pathname}?date=${selectedDate}`;
+        });
+        
+        // Also ensure all completion date inputs have max set to today when the page loads
+        document.querySelectorAll('input[name="completion_date"]').forEach(input => {
+            input.setAttribute('max', todayFormatted);
         });
         
         // Apply both search and date filter
