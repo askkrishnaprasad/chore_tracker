@@ -1031,11 +1031,8 @@ def register_routes(app):
             flash('You can only penalize overdue assignments.', 'warning')
             return redirect(url_for('dashboard'))
         
-        # Get penalty points from form
-        penalty = float(request.form.get('penalty_points', 0))
-        if penalty <= 0:
-            flash('Penalty must be a positive number.', 'warning')
-            return redirect(url_for('dashboard'))
+        # Always use 1.0 as the penalty value
+        penalty = 1.0
         
         # Mark as missed and apply penalty
         assignment.status = 'missed'
@@ -1050,7 +1047,7 @@ def register_routes(app):
         })
         
         # Notify the user
-        flash('Penalty has been applied.', 'success')
+        flash('Penalty of 1.0 point has been applied.', 'success')
         return redirect(url_for('dashboard'))
     
     # ADMIN ROUTES
