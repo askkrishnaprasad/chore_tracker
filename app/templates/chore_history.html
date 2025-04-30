@@ -245,6 +245,56 @@
     </div>
 </div>
 
+<!-- Missed Assignments with Penalties Section -->
+<div class="card mt-4">
+    <div class="card-header bg-danger-gradient text-white">
+        <h5 class="mb-0"><i class="fas fa-exclamation-circle me-2"></i>Missed Assignments & Penalties</h5>
+    </div>
+    <div class="card-body p-0">
+        {% if missed_assignments %}
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="bg-light">
+                        <tr>
+                            <th>Chore</th>
+                            <th>Assigned By</th>
+                            <th>Assigned To</th>
+                            <th>Due Date</th>
+                            <th>Penalty Points</th>
+                            <th>Notes</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for assignment in missed_assignments %}
+                        <tr>
+                            <td>{{ assignment.chore.name }}</td>
+                            <td>{{ assignment.assigner.username }}</td>
+                            <td>{{ assignment.assignee.username }}</td>
+                            <td>{{ assignment.due_date.strftime('%b %d, %Y') }}</td>
+                            <td>
+                                <span class="badge bg-danger">-{{ assignment.penalty_points }}</span>
+                            </td>
+                            <td>
+                                {% if assignment.notes %}
+                                {{ assignment.notes }}
+                                {% else %}
+                                <span class="text-muted">No notes</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="p-4 text-center text-muted">
+                <i class="fas fa-check-circle mb-3 fa-2x"></i>
+                <p>No missed assignments with penalties.</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
 <!-- Resolved Challenges Section -->
 <div class="card mt-4">
     <div class="card-header bg-info-gradient text-white d-flex justify-content-between align-items-center">

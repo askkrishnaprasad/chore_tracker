@@ -564,6 +564,13 @@ def register_routes(app):
             ChoreChallenge.status.in_(['accepted', 'defended', 'pending_approval'])
         ).order_by(ChoreChallenge.resolution_date.desc()).all()
         
+        # Get missed assignments with penalties for this home
+        missed_assignments = ChoreAssignment.query.join(Chore).filter(
+            Chore.home_id == current_user.home_id,
+            ChoreAssignment.status == 'missed',
+            ChoreAssignment.penalty_points > 0
+        ).order_by(ChoreAssignment.due_date.desc()).all()
+        
         # Get today's date for the date picker
         today = date.today().strftime('%Y-%m-%d')
         
@@ -572,6 +579,7 @@ def register_routes(app):
                                completions=completions,
                                challenges=pending_challenges,
                                resolved_challenges=resolved_challenges,
+                               missed_assignments=missed_assignments,
                                today=today)
     
     @app.route('/challenge_chore', methods=['POST'])
@@ -1018,15 +1026,30 @@ def register_routes(app):
             flash('You can only penalize assignments you created.', 'danger')
             return redirect(url_for('dashboard'))
         
+        # Verify that the assignment is overdue
+        if assignment.due_date >= date.today():
+            flash('You can only penalize overdue assignments.', 'warning')
+            return redirect(url_for('dashboard'))
+        
+        # Get penalty points from form
         penalty = float(request.form.get('penalty_points', 0))
         if penalty <= 0:
             flash('Penalty must be a positive number.', 'warning')
             return redirect(url_for('dashboard'))
         
+        # Mark as missed and apply penalty
         assignment.status = 'missed'
         assignment.penalty_points = penalty
         db.session.commit()
         
+        # Record activity
+        track_activity(current_user.id, 'applied_penalty', 'dashboard', {
+            'assignment_id': assignment.id,
+            'assignee_id': assignment.assignee_id,
+            'penalty_points': penalty
+        })
+        
+        # Notify the user
         flash('Penalty has been applied.', 'success')
         return redirect(url_for('dashboard'))
     
