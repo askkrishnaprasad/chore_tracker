@@ -41,19 +41,27 @@
                     </div>
                     <div class="activity-timeline">
                         {% for completion in today_chores %}
-                        <div class="activity-item mb-3 p-2 border-start border-3 {% if loop.index is odd %}border-primary{% else %}border-success{% endif %}" style="margin-left: 2px; padding-left: 12px; background-color: {% if loop.index is odd %}rgba(78, 115, 223, 0.05){% else %}rgba(28, 200, 138, 0.05){% endif %}; border-radius: 4px;">
+                        {% set user_index = loop.index0 % home_users|length %}
+                        {% set colors = ['primary', 'success', 'info', 'warning', 'danger', 'secondary'] %}
+                        {% set user_color = colors[user_index % colors|length] %}
+                        {% set color_map = {} %}
+                        {% for user in home_users %}
+                            {% set _ = color_map.update({user.id: colors[loop.index0 % colors|length]}) %}
+                        {% endfor %}
+                        {% set item_color = color_map[completion.user_id] if completion.user_id in color_map else 'primary' %}
+                        <div class="activity-item mb-3 p-2 border-start border-3 border-{{ item_color }}" style="margin-left: 2px; padding-left: 12px; background-color: rgba({{ {'primary':'78, 115, 223', 'success':'28, 200, 138', 'info':'54, 185, 204', 'warning':'246, 194, 62', 'danger':'231, 74, 59', 'secondary':'133, 135, 150'}[item_color] }}, 0.05); border-radius: 4px;">
                             <div class="d-flex justify-content-between">
                                 <div>
                                     <div class="fw-medium mb-1">{{ completion.chore.name }}</div>
                                     <div class="mt-1">
                                         <div class="progress" style="height: 5px; width: 100px;">
-                                            <div class="progress-bar {% if loop.index is odd %}bg-primary{% else %}bg-success{% endif %}" role="progressbar" style="width: {{ (completion.percentage * 100)|int }}%;" aria-valuenow="{{ (completion.percentage * 100)|int }}" aria-valuemin="0" aria-valuemax="100"></div>
+                                            <div class="progress-bar bg-{{ item_color }}" role="progressbar" style="width: {{ (completion.percentage * 100)|int }}%;" aria-valuenow="{{ (completion.percentage * 100)|int }}" aria-valuemin="0" aria-valuemax="100"></div>
                                         </div>
                                         <span class="small text-muted mt-1 d-inline-block">{{ (completion.percentage * 100)|int }}% completed</span>
                                     </div>
                                 </div>
                                 <div class="text-end">
-                                    <span class="badge bg-light text-dark p-2">{{ completion.user.username }}</span>
+                                    <span class="badge bg-{{ item_color }} text-white p-2">{{ completion.user.username }}</span>
                                     <div class="text-muted small mt-1">{{ completion.created_at.strftime('%I:%M %p') if completion.created_at else 'Today' }}</div>
                                 </div>
                             </div>
